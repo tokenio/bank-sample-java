@@ -25,6 +25,8 @@ gradle build tool.
 ./gradlew build
 ```
 
+The build produces shadow (fat) jar that can be run from the command line.
+
 Run
 ------
 

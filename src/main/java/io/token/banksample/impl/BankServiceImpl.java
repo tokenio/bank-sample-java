@@ -1,4 +1,4 @@
-package com.example.demo.impl;
+package io.token.banksample.impl;
 
 import static io.token.proto.common.account.AccountProtos.BankAccount.AccountCase.SWIFT;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;

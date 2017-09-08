@@ -4,7 +4,9 @@
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date [%level] %logger{0} - %message%n</pattern>
+            <pattern>
+                %d{HH:mm:ss.SSS} [%thread] [%X] %highlight(%-4level) %cyan(%logger{26}) - %msg%n
+            </pattern>
         </encoder>
     </appender>
 
@@ -12,7 +14,7 @@
         <appender-ref ref="console"/>
     </root>
 
-    <logger name="io.netty" level="debug" additivity="false">
+    <logger name="io.netty" level="info" additivity="false">
         <appender-ref ref="console"/>
     </logger>
 
