@@ -1,4 +1,4 @@
-package com.example.demo.impl;
+package io.token.banksample.impl;
 
 import io.token.proto.bankapi.Bankapi.SetValueRequest.ContentCategory;
 import io.token.sdk.api.StorageService;

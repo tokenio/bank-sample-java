@@ -1,9 +1,0 @@
-project.apply plugin: 'application'
-project.mainClassName = 'com.example.demo.Application'
-
-dependencies {
-    compile group: 'io.token.sdk', name: 'tokenio-sdk-integration', version: ver.tokenIntegrationSdk
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.apache.commons:commons-lang3:3.4'
-    testCompile 'org.assertj:assertj-core:3.8.0' // TODO 3.6.2 to stick to Java 7?
-}

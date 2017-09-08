@@ -11,23 +11,36 @@ buildscript {
     }
 }
 
-allprojects {
-    group = 'io.token.banksample'
-    version = '1.0.0'
-
-    project.apply plugin: 'java'
-    project.apply plugin: 'idea'
-
-    ext {
-        ver = [
-            tokenIntegrationSdk: '1.0.82',
-        ]
-    }
-
-    repositories {
-        mavenLocal()
-        jcenter()
-        maven { url 'https://token.jfrog.io/token/public-libs-release-local/' }
-        maven { url "https://plugins.gradle.org/m2/" }
-    }
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '2.0.0'
 }
+
+repositories {
+    mavenLocal()
+    jcenter()
+    maven { url 'https://token.jfrog.io/token/public-libs-release-local/' }
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+group = 'io.token.banksample'
+version = '1.0.0'
+project.mainClassName = project.group + '.Application'
+
+ext {
+    ver = [
+        tokenIntegrationSdk: '1.0.82',
+    ]
+}
+
+dependencies {
+    compile group: 'io.token.sdk', name: 'tokenio-sdk-integration', version: ver.tokenIntegrationSdk
+    compile group: 'com.beust', name: 'jcommander', version: '1.72'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.apache.commons:commons-lang3:3.4'
+    testCompile 'org.assertj:assertj-core:3.8.0'
+}
+
+build.dependsOn(shadowJar)
