@@ -6,7 +6,7 @@ buildscript {
         maven { url 'https://plugins.gradle.org/m2/' }
     }
     dependencies {
-        classpath 'net.ltgt.gradle:gradle-apt-plugin:0.8'
+        classpath 'net.ltgt.gradle:gradle-apt-plugin:0.11'
         classpath 'se.transmode.gradle:gradle-docker:1.2'
     }
 }
@@ -14,6 +14,8 @@ buildscript {
 plugins {
     id 'java'
     id 'application'
+    id 'idea'
+    id 'net.ltgt.apt' version '0.11'
     id 'com.github.johnrengelman.shadow' version '2.0.0'
 }
 
@@ -30,11 +32,14 @@ project.mainClassName = project.group + '.Application'
 
 ext {
     ver = [
-        tokenIntegrationSdk: '1.0.82',
+        tokenIntegrationSdk: '1.0.86-SNAPSHOT',
     ]
 }
 
 dependencies {
+    compileOnly "com.google.auto.value:auto-value:1.5"
+    apt "com.google.auto.value:auto-value:1.5"
+
     compile group: 'io.token.sdk', name: 'tokenio-sdk-integration', version: ver.tokenIntegrationSdk
     compile group: 'com.beust', name: 'jcommander', version: '1.72'
 
@@ -44,3 +49,10 @@ dependencies {
 }
 
 build.dependsOn(shadowJar)
+
+idea {
+    module {
+        sourceDirs += file("${buildDir}/generated/source/apt/main")
+        sourceDirs += file("${buildDir}/generated/source/apt/test")
+    }
+}

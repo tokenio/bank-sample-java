@@ -20,8 +20,10 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public Optional<byte[]> setValue(
-            String key, ContentCategory category, byte[] value) {
+    public synchronized Optional<byte[]> setValue(
+            String key,
+            ContentCategory category,
+            byte[] value) {
         return Optional.ofNullable(storage.put(key, value));
     }
 
