@@ -19,7 +19,7 @@ public abstract class AccountTransaction {
      * @param amount transaction amount
      * @return newly created transaction
      */
-    static AccountTransaction debit(
+    public static AccountTransaction debit(
             String transferId,
             String transactionId,
             BankAccount account,
@@ -43,7 +43,7 @@ public abstract class AccountTransaction {
      * @param amount transaction amount
      * @return newly created transaction
      */
-    static AccountTransaction credit(
+    public static AccountTransaction credit(
             String transferId,
             String transactionId,
             BankAccount account,

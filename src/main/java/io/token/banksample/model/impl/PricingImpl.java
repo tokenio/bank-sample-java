@@ -100,18 +100,14 @@ public final class PricingImpl implements Pricing {
         return quote;
     }
 
-    /**
-     * Redeems a previously issued pricing quote, booking the FX deal.
-     *
-     * @param quote previously issued quote
-     */
     @Override
-    public void redeemQuote(TransferQuote quote) {
-        TransferQuote lookedUp = quotes.remove(quote.getId());
-        if (!quote.equals(lookedUp)) {
+    public TransferQuote redeemQuote(TransferQuote quote) {
+        TransferQuote result = quotes.remove(quote.getId());
+        if (!quote.equals(result)) {
             throw new PrepareTransferException(
                     FAILURE_INVALID_QUOTE,
                     format("Quote not found: %s", quote));
         }
+        return result;
     }
 }

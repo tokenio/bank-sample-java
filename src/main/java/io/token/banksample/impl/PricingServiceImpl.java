@@ -19,6 +19,9 @@ import java.util.Optional;
 
 /**
  * Sample implementation of the {@link PricingService}. Returns fake data.
+ *
+ * TODO: 0 fees to simplify?
+ * TODO: Make counterparty quote optional.
  */
 public class PricingServiceImpl implements PricingService {
     private final Accounting accounts;
@@ -32,10 +35,6 @@ public class PricingServiceImpl implements PricingService {
     /**
      * FX is performed on the remitter side. Therefore the quote is from the
      * source to the destination account currency.
-     *
-     * TODO: Needs to be smarter about FX. There are several scenarios.
-     * TODO: If we know dest account currency then do FX for that.
-     * TODO: If we don't know dest account currency then do FX requested currency.
      *
      * {@inheritDoc}
      */

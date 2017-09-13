@@ -1,6 +1,7 @@
 package io.token.banksample.impl;
 
 import static com.google.common.base.Preconditions.checkState;
+import static io.token.banksample.model.AccountTransfer.transfer;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INVALID_CURRENCY;
 import static io.token.sdk.util.ProtoFactory.newMoney;
@@ -20,10 +21,9 @@ import io.token.sdk.api.InstantTransfer;
 import io.token.sdk.api.PrepareTransferException;
 import io.token.sdk.api.service.InstantTransferService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Sample implementation of the {@link InstantTransferService}. Returns fake
@@ -35,8 +35,6 @@ import org.slf4j.LoggerFactory;
  *        quote already.
  */
 public class InstantTransferServiceImpl implements InstantTransferService {
-    private static final Logger logger = LoggerFactory.getLogger(InstantTransferServiceImpl.class);
-
     private final Accounting accounts;
     private final Pricing pricing;
 
@@ -52,21 +50,49 @@ public class InstantTransferServiceImpl implements InstantTransferService {
      */
     @Override
     public InstantTransaction beginDebitTransaction(InstantTransfer transfer) {
-        // Book FX deal.
-        // TODO: redeem result needs to be recorded in the accounts change...
-        // TODO: Use the right amount, need to take FX into account?
-        pricing.redeemQuote(transfer.getPricing().getSourceQuote());
-        // Put a hold on the account.
-        AccountTransactionPair txPair = accounts.transfer(AccountTransfer.transfer()
-                .withId(transfer.getTokenTransferId())
-                .from(transfer.getAccount())
-                .to(accounts.getHoldAccount(transfer.getTransactionAmountCurrency()))
-                .withAmount(
-                        transfer.getTransactionAmount().doubleValue(),
-                        transfer.getTransactionAmountCurrency())
-                .build());
+        List<AccountTransfer> transfers = new ArrayList<>();
 
-        return InstantTransaction.builder(txPair.getDebit().getTransactionId())
+        if (!transfer.getPricing().hasSourceQuote()) {
+            // If FX is not needed, just move the money to the holding account.
+            transfers.add(transfer()
+                    .withId(transfer.getTokenTransferId())
+                    .from(transfer.getAccount())
+                    .to(accounts.getHoldAccount(transfer.getTransactionAmountCurrency()))
+                    .withAmount(
+                            transfer.getTransactionAmount().doubleValue(),
+                            transfer.getTransactionAmountCurrency())
+                    .build());
+        } else {
+            // Create two transfers to account for FX.
+            // 1) DB customer, credit FX in the customer account currency.
+            // 2) DB FX, credit hold account in the settlement account currency.
+            // Note that we are not accounting for  the spread with this
+            // transaction pair, it goes 'nowhere'.
+            pricing.redeemQuote(transfer.getPricing().getSourceQuote());
+            transfers.add(transfer()
+                    .withId(transfer.getTokenTransferId())
+                    .from(transfer.getAccount())
+                    .to(accounts.getFxAccount(transfer.getTransactionAmountCurrency()))
+                    .withAmount(
+                            transfer.getTransactionAmount().doubleValue(),
+                            transfer.getTransactionAmountCurrency())
+                    .build());
+            transfers.add(transfer()
+                    .withId(transfer.getTokenTransferId())
+                    .from(accounts.getFxAccount(transfer.getSettlementAmountCurrency()))
+                    .to(accounts.getHoldAccount(transfer.getSettlementAmountCurrency()))
+                    .withAmount(
+                            transfer.getSettlementAmount().doubleValue(),
+                            transfer.getSettlementAmountCurrency())
+                    .build());
+        }
+
+        // Post the transfers to the accounts.
+        List<AccountTransactionPair> txPairs = accounts.transfer(transfers);
+
+        // Return first transaction id back so that we can find the hold transaction
+        // later during commit / rollback.
+        return InstantTransaction.builder(txPairs.get(0).getDebit().getTransactionId())
                 .amount(newMoney(
                         transfer.getTransactionAmount(),
                         transfer.getTransactionAmountCurrency()))
@@ -99,7 +125,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
         checkState(amount.getCurrency().equals(hold.getCurrency()));
         checkState(account.equals(hold.getFrom()));
 
-        accounts.transfer(AccountTransfer.transfer()
+        accounts.transfer(transfer()
                 .withId(transferId)
                 .from(hold.getTo())
                 .to(accounts.getSettlementAccount(hold.getCurrency()))
@@ -130,7 +156,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
         checkState(amount.getCurrency().equals(hold.getCurrency()));
         checkState(account.equals(hold.getFrom()));
 
-        accounts.transfer(AccountTransfer.transfer()
+        accounts.transfer(transfer()
                 .withId(transferId)
                 .from(hold.getTo())
                 .to(hold.getFrom())
@@ -189,7 +215,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             String transactionId,
             BankAccount account,
             Money amount) {
-        accounts.transfer(AccountTransfer.transfer()
+        accounts.transfer(transfer()
                 .withId(transferId)
                 .from(accounts.getSettlementAccount(amount.getCurrency()))
                 .to(account)
