@@ -1,6 +1,7 @@
 package io.token.banksample.model.impl;
 
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import io.token.banksample.config.Account;
@@ -14,6 +15,7 @@ import io.token.sdk.api.PrepareTransferException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,26 +27,25 @@ import java.util.Optional;
 public class AccountingImpl implements Accounting {
     private final Map<String, Account> holdAccounts;
     private final Map<String, Account> settlementAccounts;
+    private final Map<String, Account> fxAccounts;
     private final Collection<Account> accounts;
     private final Map<String, AccountTransfer> transfers;
 
     public AccountingImpl(
             Collection<Account> holdAccounts,
             Collection<Account> settlementAccounts,
+            Collection<Account> fxAccounts,
             Collection<Account> customerAccounts) {
-        this.holdAccounts = holdAccounts
-                .stream()
-                .collect(toMap(
-                        a -> a.getBalance().getCurrency(),
-                        a -> a));
-        this.settlementAccounts = settlementAccounts
-                .stream()
-                .collect(toMap(
-                        a -> a.getBalance().getCurrency(),
-                        a -> a));
-        this.accounts = new ArrayList<>(customerAccounts);
+        this.holdAccounts = indexAccounts(holdAccounts);
+        this.settlementAccounts = indexAccounts(settlementAccounts);
+        this.fxAccounts = indexAccounts(fxAccounts);
+
+        this.accounts = new ArrayList<>();
         this.accounts.addAll(holdAccounts);
         this.accounts.addAll(settlementAccounts);
+        this.accounts.addAll(fxAccounts);
+        this.accounts.addAll(customerAccounts);
+
         this.transfers = new HashMap<>();
     }
 
@@ -69,6 +70,16 @@ public class AccountingImpl implements Accounting {
     }
 
     @Override
+    public BankAccount getFxAccount(String currency) {
+        return Optional
+                .ofNullable(fxAccounts.get(currency))
+                .map(Account::toBankAccount)
+                .orElseThrow(() -> new PrepareTransferException(
+                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                        "FX account is not found for: " + currency));
+    }
+
+    @Override
     public Optional<Balance> lookupBalance(BankAccount account) {
         return toSwiftAccount(account)
                 .flatMap(swift -> accounts.stream()
@@ -79,14 +90,26 @@ public class AccountingImpl implements Accounting {
     }
 
     @Override
-    public AccountTransactionPair transfer(AccountTransfer transfer) {
-        transfers.put(transfer.getTransferId(), transfer);
-        return transfer.toTransactionPair();
+    public List<AccountTransactionPair> transfer(List<AccountTransfer> newTransfers) {
+        return newTransfers.stream()
+                .map(t -> {
+                    transfers.put(t.getTransferId(), t);
+                    return t.toTransactionPair();
+                })
+                .collect(toList());
     }
 
     @Override
     public Optional<AccountTransfer> lookupTransfer(String transferId) {
         return Optional.ofNullable(transfers.get(transferId));
+    }
+
+    private static Map<String, Account> indexAccounts(Collection<Account> accounts) {
+        return accounts
+                .stream()
+                .collect(toMap(
+                        a -> a.getBalance().getCurrency(),
+                        a -> a));
     }
 
     private static Optional<BankAccount.Swift> toSwiftAccount(BankAccount account) {

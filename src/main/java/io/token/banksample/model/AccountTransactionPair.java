@@ -15,7 +15,7 @@ public abstract class AccountTransactionPair {
      * @param credit credit transaction leg
      * @return transaction pair
      */
-    static AccountTransactionPair transactionPair(
+    public static AccountTransactionPair transactionPair(
             AccountTransaction debit,
             AccountTransaction credit) {
         return new AutoValue_AccountTransactionPair(debit, credit);

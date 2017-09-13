@@ -30,7 +30,7 @@ public final class Configuration {
      * @return list of configured accounts
      */
     public List<Account> accounts() {
-        return config.getConfigList("accounts")
+        return config.getConfigList("accounts.customers")
                 .stream()
                 .map(c -> Account.create(
                         c.getString("name"),
@@ -48,8 +48,8 @@ public final class Configuration {
      * @return hold account for the given currency
      */
     public Account holdAccountFor(String currency) {
-        String bic = config.getString("hold.bic");
-        String numberFormat = config.getString("hold.number_format");
+        String bic = config.getString("accounts.hold.bic");
+        String numberFormat = config.getString("accounts.hold.number_format");
         return Account.create(
                 "Holding account - " + currency,
                 bic,
@@ -65,10 +65,27 @@ public final class Configuration {
      * @return settlement account for the given currency
      */
     public Account settlementAccountFor(String currency) {
-        String bic = config.getString("settlement.bic");
-        String numberFormat = config.getString("settlement.number_format");
+        String bic = config.getString("accounts.settlement.bic");
+        String numberFormat = config.getString("accounts.settlement.number_format");
         return Account.create(
                 "Settlement account - " + currency,
+                bic,
+                format(numberFormat, currency),
+                currency,
+                0);
+    }
+
+    /**
+     * FX account info for the given currency.
+     *
+     * @param currency currency to extract the FX account for
+     * @return FX account for the given currency
+     */
+    public Account fxAccountFor(String currency) {
+        String bic = config.getString("accounts.fx.bic");
+        String numberFormat = config.getString("accounts.fx.number_format");
+        return Account.create(
+                "FX account - " + currency,
                 bic,
                 format(numberFormat, currency),
                 currency,

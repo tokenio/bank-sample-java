@@ -52,7 +52,16 @@ final class Factory {
                 .distinct()
                 .map(config::settlementAccountFor)
                 .collect(toList());
-        this.accounting = new AccountingImpl(holdAccounts, settlementAccounts, customerAccounts);
+        List<Account> fxAccounts = customerAccounts.stream()
+                .map(a -> a.getBalance().getCurrency())
+                .distinct()
+                .map(config::fxAccountFor)
+                .collect(toList());
+        this.accounting = new AccountingImpl(
+                holdAccounts,
+                settlementAccounts,
+                fxAccounts,
+                customerAccounts);
         this.pricing = new PricingImpl(config.fxRates(), config.transactionFee());
     }
 
