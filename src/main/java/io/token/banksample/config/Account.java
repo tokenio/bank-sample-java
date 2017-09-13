@@ -1,6 +1,7 @@
 package io.token.banksample.config;
 
 import com.google.auto.value.AutoValue;
+import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.Balance;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public abstract class Account {
      * @param balance account balance
      * @return newly created account
      */
-    public static Account create(
+    static Account create(
             String name,
             String bic,
             String number,
@@ -76,4 +77,18 @@ public abstract class Account {
      * @return account balance
      */
     public abstract Balance getBalance();
+
+    /**
+     * Helper method to convert this object to the proto account definition.
+     *
+     * @return proto account definition
+     */
+    public BankAccount toBankAccount() {
+        return BankAccount.newBuilder()
+                .setSwift(BankAccount.Swift.newBuilder()
+                        .setBic(getBic())
+                        .setAccount(getNumber())
+                        .build())
+                .build();
+    }
 }

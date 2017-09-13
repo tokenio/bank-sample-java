@@ -42,8 +42,38 @@ public final class PricingImpl implements Pricing {
                         format("Price quote not found: %s", id)));
     }
 
+    /**
+     * Only remitter side FX is supported. Therefore, on the beneficiary
+     * side we only apply fees.
+     *
+     * {@inheritDoc}
+     */
     @Override
-    public synchronized TransferQuote quote(String baseCurrency, String quoteCurrency) {
+    public synchronized TransferQuote creditQuote(String baseCurrency, String quoteCurrency) {
+        TransferQuote quote = TransferQuote.newBuilder()
+                .setId(UUID.randomUUID().toString())
+                .setAccountCurrency(quoteCurrency)
+                .setFeesTotal(transactionFee.toPlainString())
+                .addFees(Fee.newBuilder()
+                        .setDescription("Transaction fee")
+                        .setAmount(transactionFee.toPlainString())
+                        .build())
+                .setExpiresAtMs(Instant.now()
+                        .plus(Duration.ofDays(1))
+                        .toEpochMilli())
+                .build();
+
+        quotes.put(quote.getId(), quote);
+        return quote;
+    }
+
+    /**
+     * We perform FX on the remitter side.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public TransferQuote debitQuote(String baseCurrency, String quoteCurrency) {
         FxRate fxRate = rates.stream()
                 .filter(r -> r.getBaseCurrency().equals(baseCurrency))
                 .filter(r -> r.getQuoteCurrency().equals(quoteCurrency))
@@ -68,5 +98,20 @@ public final class PricingImpl implements Pricing {
 
         quotes.put(quote.getId(), quote);
         return quote;
+    }
+
+    /**
+     * Redeems a previously issued pricing quote, booking the FX deal.
+     *
+     * @param quote previously issued quote
+     */
+    @Override
+    public void redeemQuote(TransferQuote quote) {
+        TransferQuote lookedUp = quotes.remove(quote.getId());
+        if (!quote.equals(lookedUp)) {
+            throw new PrepareTransferException(
+                    FAILURE_INVALID_QUOTE,
+                    format("Quote not found: %s", quote));
+        }
     }
 }
