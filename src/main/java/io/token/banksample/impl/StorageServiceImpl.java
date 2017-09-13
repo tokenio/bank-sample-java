@@ -1,7 +1,7 @@
 package io.token.banksample.impl;
 
 import io.token.proto.bankapi.Bankapi.SetValueRequest.ContentCategory;
-import io.token.sdk.api.StorageService;
+import io.token.sdk.api.service.StorageService;
 
 import java.util.HashMap;
 import java.util.Map;

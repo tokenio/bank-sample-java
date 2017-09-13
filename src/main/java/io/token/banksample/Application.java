@@ -37,7 +37,10 @@ public final class Application {
                         args.configPath("tls", "key.pem"),
                         args.configPath("tls", "trusted-certs.pem"))
                 .reportErrorDetails()
-                .withBankService(factory.bankService())
+                .withAccountService(factory.accountService())
+                .withInstantTransferService(factory.instantTransferService())
+                .withTransferService(factory.transferService())
+                .withPricingService(factory.pricingService())
                 .withStorageService(factory.storageService())
                 .build();
 

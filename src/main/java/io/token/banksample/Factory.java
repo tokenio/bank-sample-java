@@ -1,17 +1,27 @@
 package io.token.banksample;
 
+import static java.util.stream.Collectors.toList;
+
 import com.typesafe.config.ConfigFactory;
+import io.token.banksample.config.Account;
 import io.token.banksample.config.Configuration;
-import io.token.banksample.impl.BankServiceImpl;
+import io.token.banksample.impl.AccountServiceImpl;
+import io.token.banksample.impl.InstantTransferServiceImpl;
+import io.token.banksample.impl.PricingServiceImpl;
 import io.token.banksample.impl.StorageServiceImpl;
-import io.token.banksample.model.Accounts;
+import io.token.banksample.impl.TransferServiceImpl;
+import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Pricing;
-import io.token.banksample.model.impl.AccountsImpl;
+import io.token.banksample.model.impl.AccountingImpl;
 import io.token.banksample.model.impl.PricingImpl;
-import io.token.sdk.api.BankService;
-import io.token.sdk.api.StorageService;
+import io.token.sdk.api.service.AccountService;
+import io.token.sdk.api.service.InstantTransferService;
+import io.token.sdk.api.service.PricingService;
+import io.token.sdk.api.service.StorageService;
+import io.token.sdk.api.service.TransferService;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * A factory class that is used to instantiate various services that are
@@ -19,6 +29,8 @@ import java.io.File;
  */
 final class Factory {
     private final Configuration config;
+    private final Accounting accounting;
+    private final Pricing pricing;
 
     /**
      * Creates new factory instance.
@@ -28,6 +40,20 @@ final class Factory {
     Factory(String configFilePath) {
         File configFile = new File(configFilePath);
         this.config = new Configuration(ConfigFactory.parseFile(configFile));
+
+        List<Account> customerAccounts = config.accounts();
+        List<Account> holdAccounts = customerAccounts.stream()
+                .map(a -> a.getBalance().getCurrency())
+                .distinct()
+                .map(config::holdAccountFor)
+                .collect(toList());
+        List<Account> settlementAccounts = customerAccounts.stream()
+                .map(a -> a.getBalance().getCurrency())
+                .distinct()
+                .map(config::settlementAccountFor)
+                .collect(toList());
+        this.accounting = new AccountingImpl(holdAccounts, settlementAccounts, customerAccounts);
+        this.pricing = new PricingImpl(config.fxRates(), config.transactionFee());
     }
 
     /**
@@ -40,13 +66,38 @@ final class Factory {
     }
 
     /**
-     * Creates new {@link BankService} instance.
+     * Creates new {@link AccountService} instance.
      *
-     * @return new bank service instance
+     * @return new account service instance
      */
-    BankService bankService() {
-        Accounts accounts = new AccountsImpl(config.accountList());
-        Pricing pricing = new PricingImpl(config.fxRateList(), config.transactionFee());
-        return new BankServiceImpl(accounts, pricing);
+    AccountService accountService() {
+        return new AccountServiceImpl(accounting);
+    }
+
+    /**
+     * Creates new {@link InstantTransferService} instance.
+     *
+     * @return new pricing service instance
+     */
+    PricingService pricingService() {
+        return new PricingServiceImpl(accounting, pricing);
+    }
+
+    /**
+     * Creates new {@link InstantTransferService} instance.
+     *
+     * @return new instant transfer service instance
+     */
+    InstantTransferService instantTransferService() {
+        return new InstantTransferServiceImpl(accounting, pricing);
+    }
+
+    /**
+     * Creates new {@link TransferService} instance.
+     *
+     * @return new transfer service instance
+     */
+    TransferService transferService() {
+        return new TransferServiceImpl();
     }
 }
