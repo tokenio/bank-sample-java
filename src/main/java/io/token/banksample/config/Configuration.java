@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import com.typesafe.config.Config;
+import io.token.proto.common.address.AddressProtos.Address;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
 
 import java.util.List;
@@ -31,12 +32,22 @@ public final class Configuration {
     public List<Account> accounts() {
         return config.getConfigList("accounts.customers")
                 .stream()
-                .map(c -> Account.create(
-                        c.getString("name"),
-                        c.getString("bic"),
-                        c.getString("number"),
-                        c.getString("currency"),
-                        c.getDouble("balance")))
+                .map(c -> {
+                    Config address = c.getConfig("address");
+                    return Account.create(
+                            c.getString("name"),
+                            Address.newBuilder()
+                                    .setHouseNumber(address.getString("house"))
+                                    .setStreet(address.getString("street"))
+                                    .setCity(address.getString("city"))
+                                    .setPostCode(address.getString("post_code"))
+                                    .setCountry(address.getString("country"))
+                                    .build(),
+                            c.getString("bic"),
+                            c.getString("number"),
+                            c.getString("currency"),
+                            c.getDouble("balance"));
+                })
                 .collect(toList());
     }
 
@@ -51,6 +62,7 @@ public final class Configuration {
         String numberFormat = config.getString("accounts.hold.number_format");
         return Account.create(
                 "Holding account - " + currency,
+                Address.getDefaultInstance(),
                 bic,
                 format(numberFormat, currency),
                 currency,
@@ -68,6 +80,7 @@ public final class Configuration {
         String numberFormat = config.getString("accounts.settlement.number_format");
         return Account.create(
                 "Settlement account - " + currency,
+                Address.getDefaultInstance(),
                 bic,
                 format(numberFormat, currency),
                 currency,
@@ -85,6 +98,7 @@ public final class Configuration {
         String numberFormat = config.getString("accounts.fx.number_format");
         return Account.create(
                 "FX account - " + currency,
+                Address.getDefaultInstance(),
                 bic,
                 format(numberFormat, currency),
                 currency,

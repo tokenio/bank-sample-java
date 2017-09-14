@@ -3,6 +3,7 @@ package io.token.banksample.model;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
+import io.token.banksample.config.Account;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.Balance;
 
@@ -38,12 +39,22 @@ public interface Accounting {
     BankAccount getFxAccount(String currency);
 
     /**
+     * Looks up account information.
+     *
+     * @param bankAccount account to lookup the info for
+     * @return account info
+     */
+    Optional<Account> lookupAccount(BankAccount bankAccount);
+
+    /**
      * Looks up account balance.
      *
      * @param account account to lookup the balance for
      * @return account balance if found
      */
-    Optional<Balance> lookupBalance(BankAccount account);
+    default Optional<Balance> lookupBalance(BankAccount account) {
+        return lookupAccount(account).map(Account::getBalance);
+    }
 
     /**
      * Posts the transfer to the specified accounts. The transfer results
@@ -83,4 +94,23 @@ public interface Accounting {
      * @return transfer object
      */
     Optional<AccountTransfer> lookupTransfer(String transferId);
+
+    /**
+     * Looks up transaction given the account and transaction ID.
+     *
+     * @param account account to lookup the transaction for
+     * @param transactionId transaction id
+     * @return looked up transaction
+     */
+    Optional<AccountTransaction> lookupTransaction(BankAccount account, String transactionId);
+
+    /**
+     * Looks up transactions for the given account.
+     *
+     * @param account account to lookup the transactions for
+     * @param offset the result offset
+     * @param limit the limit on the number of results returned
+     * @return list of looked up transactions
+     */
+    List<AccountTransaction> lookupTransactions(BankAccount account, int offset, int limit);
 }

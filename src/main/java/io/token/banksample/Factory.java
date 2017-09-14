@@ -107,6 +107,6 @@ final class Factory {
      * @return new transfer service instance
      */
     TransferService transferService() {
-        return new TransferServiceImpl();
+        return new TransferServiceImpl(accounting);
     }
 }

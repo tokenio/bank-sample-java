@@ -65,7 +65,7 @@ public final class PricingImpl implements Pricing {
      * {@inheritDoc}
      */
     @Override
-    public TransferQuote debitQuote(String baseCurrency, String quoteCurrency) {
+    public synchronized TransferQuote debitQuote(String baseCurrency, String quoteCurrency) {
         FxRate fxRate = rates.stream()
                 .filter(r -> r.getBaseCurrency().equals(baseCurrency))
                 .filter(r -> r.getQuoteCurrency().equals(quoteCurrency))
@@ -89,7 +89,7 @@ public final class PricingImpl implements Pricing {
     }
 
     @Override
-    public void redeemQuote(TransferQuote quote) {
+    public synchronized void redeemQuote(TransferQuote quote) {
         TransferQuote lookedUp = quotes.remove(quote.getId());
         if (!quote.equals(lookedUp)) {
             throw new PrepareTransferException(
