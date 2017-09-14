@@ -6,11 +6,9 @@ import static java.lang.String.format;
 
 import io.token.banksample.model.Pricing;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote;
-import io.token.proto.common.pricing.PricingProtos.TransferQuote.Fee;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
 import io.token.sdk.api.PrepareTransferException;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -24,12 +22,10 @@ import java.util.UUID;
  */
 public final class PricingImpl implements Pricing {
     private final List<FxRate> rates;
-    private final BigDecimal transactionFee;
     private final Map<String, TransferQuote> quotes;
 
-    public PricingImpl(List<FxRate> rates, BigDecimal transactionFee) {
+    public PricingImpl(List<FxRate> rates) {
         this.rates = rates;
-        this.transactionFee = transactionFee;
         this.quotes = new HashMap<>();
     }
 
@@ -53,11 +49,7 @@ public final class PricingImpl implements Pricing {
         TransferQuote quote = TransferQuote.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setAccountCurrency(quoteCurrency)
-                .setFeesTotal(transactionFee.toPlainString())
-                .addFees(Fee.newBuilder()
-                        .setDescription("Transaction fee")
-                        .setAmount(transactionFee.toPlainString())
-                        .build())
+                .setFeesTotal("0")
                 .setExpiresAtMs(Instant.now()
                         .plus(Duration.ofDays(1))
                         .toEpochMilli())
@@ -85,12 +77,8 @@ public final class PricingImpl implements Pricing {
         TransferQuote quote = TransferQuote.newBuilder()
                 .setId(UUID.randomUUID().toString())
                 .setAccountCurrency(quoteCurrency)
-                .setFeesTotal(transactionFee.toPlainString())
+                .setFeesTotal("0")
                 .addRates(fxRate)
-                .addFees(Fee.newBuilder()
-                        .setDescription("Transaction fee")
-                        .setAmount(transactionFee.toPlainString())
-                        .build())
                 .setExpiresAtMs(Instant.now()
                         .plus(Duration.ofDays(1))
                         .toEpochMilli())
@@ -101,13 +89,12 @@ public final class PricingImpl implements Pricing {
     }
 
     @Override
-    public TransferQuote redeemQuote(TransferQuote quote) {
-        TransferQuote result = quotes.remove(quote.getId());
-        if (!quote.equals(result)) {
+    public void redeemQuote(TransferQuote quote) {
+        TransferQuote lookedUp = quotes.remove(quote.getId());
+        if (!quote.equals(lookedUp)) {
             throw new PrepareTransferException(
                     FAILURE_INVALID_QUOTE,
                     format("Quote not found: %s", quote));
         }
-        return result;
     }
 }

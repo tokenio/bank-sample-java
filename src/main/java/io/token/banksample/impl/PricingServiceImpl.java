@@ -20,7 +20,6 @@ import java.util.Optional;
 /**
  * Sample implementation of the {@link PricingService}. Returns fake data.
  *
- * TODO: 0 fees to simplify?
  * TODO: Make counterparty quote optional.
  */
 public class PricingServiceImpl implements PricingService {

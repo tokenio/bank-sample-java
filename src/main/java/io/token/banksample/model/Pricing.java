@@ -38,7 +38,6 @@ public interface Pricing {
      * Redeems a previously issued pricing quote, booking the FX deal.
      *
      * @param quote previously generated quote
-     * @return redeemed quote
      */
-    TransferQuote redeemQuote(TransferQuote quote);
+    void redeemQuote(TransferQuote quote);
 }
