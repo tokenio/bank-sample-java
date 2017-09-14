@@ -20,15 +20,33 @@ final class AccountLedger {
         this.txById = new HashMap<>();
     }
 
+    /**
+     * Adds transaction to the account ledger.
+     *
+     * @param transaction transaction to add
+     */
     void addTransaction(AccountTransaction transaction) {
         txs.add(transaction);
         txById.put(transaction.getTransactionId(), transaction);
     }
 
+    /**
+     * Looks up a transaction by ID.
+     *
+     * @param id transaction ID
+     * @return looked up transaction
+     */
     Optional<AccountTransaction> lookupTransaction(String id) {
         return Optional.ofNullable(txById.get(id));
     }
 
+    /**
+     * Looks up multiple transactions.
+     *
+     * @param offset offset to start from
+     * @param limit max number of transactions to lookup
+     * @return list of transactions
+     */
     List<AccountTransaction> lookupTransactions(int offset, int limit) {
         return txs.subList(offset, offset + limit);
     }
