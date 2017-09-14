@@ -94,4 +94,23 @@ public interface Accounting {
      * @return transfer object
      */
     Optional<AccountTransfer> lookupTransfer(String transferId);
+
+    /**
+     * Looks up transaction given the account and transaction ID.
+     *
+     * @param account account to lookup the transaction for
+     * @param transactionId transaction id
+     * @return looked up transaction
+     */
+    Optional<AccountTransaction> lookupTransaction(BankAccount account, String transactionId);
+
+    /**
+     * Looks up transactions for the given account.
+     *
+     * @param account account to lookup the transactions for
+     * @param offset the result offset
+     * @param limit the limit on the number of results returned
+     * @return list of looked up transactions
+     */
+    List<AccountTransaction> lookupTransactions(BankAccount account, int offset, int limit);
 }

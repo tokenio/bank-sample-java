@@ -74,13 +74,15 @@ public abstract class AccountTransfer {
                         getTransferId() + ":debit",
                         getFrom(),
                         getTo(),
-                        getAmount()),
+                        getAmount(),
+                        getCurrency()),
                 credit(
                         getTransferId(),
                         getTransferId() + ":credit",
                         getTo(),
                         getFrom(),
-                        getAmount()));
+                        getAmount(),
+                        getCurrency()));
     }
 
     /**
