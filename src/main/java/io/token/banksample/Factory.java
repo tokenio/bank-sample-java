@@ -62,7 +62,7 @@ final class Factory {
                 settlementAccounts,
                 fxAccounts,
                 customerAccounts);
-        this.pricing = new PricingImpl(config.fxRates(), config.transactionFee());
+        this.pricing = new PricingImpl(config.fxRates());
     }
 
     /**

@@ -6,7 +6,6 @@ import static java.util.stream.Collectors.toList;
 import com.typesafe.config.Config;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -114,14 +113,5 @@ public final class Configuration {
                                     .build());
                 })
                 .collect(toList());
-    }
-
-    /**
-     * Extracts transaction fee.
-     *
-     * @return transaction fee, in the account currency
-     */
-    public BigDecimal transactionFee() {
-        return BigDecimal.valueOf(config.getDouble("pricing.transaction_fee"));
     }
 }

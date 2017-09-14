@@ -191,7 +191,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
                     "Credit side FX is not supported");
         }
 
-        return InstantTransaction.builder(transfer.getTokenTransferId())
+        return InstantTransaction.builder(transfer.getPricing().getDestinationQuote().getId())
                 .amount(newMoney(
                         transfer.getTransactionAmount(),
                         transfer.getTransactionAmountCurrency()))
