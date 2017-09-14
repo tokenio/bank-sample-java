@@ -2,6 +2,7 @@ package io.token.banksample.config;
 
 import com.google.auto.value.AutoValue;
 import io.token.proto.common.account.AccountProtos.BankAccount;
+import io.token.proto.common.address.AddressProtos.Address;
 import io.token.sdk.api.Balance;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ public abstract class Account {
      * Creates new bank account data structure.
      *
      * @param name account legal name
+     * @param address account physical address
      * @param bic account BIC
      * @param number account number
      * @param currency account currency
@@ -23,12 +25,14 @@ public abstract class Account {
      */
     static Account create(
             String name,
+            Address address,
             String bic,
             String number,
             String currency,
             double balance) {
         return create(
                 name,
+                address,
                 bic,
                 number,
                 Balance.create(
@@ -41,13 +45,19 @@ public abstract class Account {
      * Creates new bank account data structure.
      *
      * @param name account legal name
+     * @param address account physical address
      * @param bic account BIC
      * @param number account number
      * @param balance account balance
      * @return newly created account
      */
-    static Account create(String name, String bic, String number, Balance balance) {
-        return new AutoValue_Account(name, bic, number, balance);
+    static Account create(
+            String name,
+            Address address,
+            String bic,
+            String number,
+            Balance balance) {
+        return new AutoValue_Account(name, address, bic, number, balance);
     }
 
     /**
@@ -56,6 +66,13 @@ public abstract class Account {
      * @return account name
      */
     public abstract String getName();
+
+    /**
+     * Returns account physical address
+     *
+     * @return account address
+     */
+    public abstract Address getAddress();
 
     /**
      * Returns account BIC.

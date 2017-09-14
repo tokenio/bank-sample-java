@@ -9,7 +9,6 @@ import io.token.banksample.model.AccountTransactionPair;
 import io.token.banksample.model.AccountTransfer;
 import io.token.banksample.model.Accounting;
 import io.token.proto.common.account.AccountProtos.BankAccount;
-import io.token.sdk.api.Balance;
 import io.token.sdk.api.PrepareTransferException;
 
 import java.util.ArrayList;
@@ -80,12 +79,11 @@ public class AccountingImpl implements Accounting {
     }
 
     @Override
-    public Optional<Balance> lookupBalance(BankAccount account) {
+    public Optional<Account> lookupAccount(BankAccount account) {
         return toSwiftAccount(account)
                 .flatMap(swift -> accounts.stream()
                         .filter(a -> a.getBic().equals(swift.getBic()))
                         .filter(a -> a.getNumber().equals(swift.getAccount()))
-                        .map(Account::getBalance)
                         .findFirst());
     }
 

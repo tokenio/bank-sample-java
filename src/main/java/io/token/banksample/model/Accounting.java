@@ -3,6 +3,7 @@ package io.token.banksample.model;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
+import io.token.banksample.config.Account;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.Balance;
 
@@ -38,12 +39,22 @@ public interface Accounting {
     BankAccount getFxAccount(String currency);
 
     /**
+     * Looks up account information.
+     *
+     * @param bankAccount account to lookup the info for
+     * @return account info
+     */
+    Optional<Account> lookupAccount(BankAccount bankAccount);
+
+    /**
      * Looks up account balance.
      *
      * @param account account to lookup the balance for
      * @return account balance if found
      */
-    Optional<Balance> lookupBalance(BankAccount account);
+    default Optional<Balance> lookupBalance(BankAccount account) {
+        return lookupAccount(account).map(Account::getBalance);
+    }
 
     /**
      * Posts the transfer to the specified accounts. The transfer results

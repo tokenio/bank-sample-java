@@ -1,13 +1,13 @@
 package io.token.banksample.impl;
 
+import static io.grpc.Status.NOT_FOUND;
 import static io.token.proto.common.account.AccountProtos.BankAccount.AccountCase.SWIFT;
-import static java.math.BigDecimal.ZERO;
 
+import io.token.banksample.config.Account;
 import io.token.banksample.model.Accounting;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.account.AccountProtos.BankAccount.AccountCase;
 import io.token.proto.common.account.AccountProtos.BankAccount.Swift;
-import io.token.proto.common.address.AddressProtos.Address;
 import io.token.proto.common.money.MoneyProtos.Money;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transaction.TransactionProtos.TransactionStatus;
@@ -37,11 +37,11 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Balance getBalance(BankAccount account) {
-        Swift customerAccount = getSwiftAccount(account);
-        logger.info("Customer Swift account: {}; BIC: {}",
-                customerAccount.getAccount(), customerAccount.getBic());
-
-        return Balance.create("GBP", ZERO, ZERO);
+        return accounts
+                .lookupBalance(account)
+                .orElseThrow(() -> NOT_FOUND
+                        .withDescription("Account not found")
+                        .asRuntimeException());
     }
 
     @Override
@@ -61,7 +61,6 @@ public class AccountServiceImpl implements AccountService {
                 .setType(TransactionType.DEBIT) // For debit leg, CREDIT for credit leg.
                 .setStatus(TransactionStatus.SUCCESS) // For completed transaction, TransactionStatus.PROCESSING if the transaction has not been committed yet.
                 .build();
-
         return Optional.empty();
     }
 
@@ -76,19 +75,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public CustomerData getCustomerData(BankAccount bankAccount) {
-        Swift customerAccount = getSwiftAccount(bankAccount);
-        logger.info("Customer Swift account: {}; BIC: {}",
-                customerAccount.getAccount(), customerAccount.getBic());
+        Account account = accounts
+                .lookupAccount(bankAccount)
+                .orElseThrow(() -> NOT_FOUND
+                        .withDescription("Account not found")
+                        .asRuntimeException());
 
         return CustomerData.newBuilder()
-                .addLegalNames("Customer Name")
-                .setAddress(Address.newBuilder()
-                        .setHouseNumber("845")
-                        .setStreet("Market")
-                        .setCity("San Francisco")
-                        .setPostCode("94103")
-                        .setState("CA")
-                        .setCountry("US"))
+                .addLegalNames(account.getName())
+                .setAddress(account.getAddress())
                 .build();
     }
 
