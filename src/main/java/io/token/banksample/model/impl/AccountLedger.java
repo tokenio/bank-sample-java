@@ -1,53 +1,68 @@
 package io.token.banksample.model.impl;
 
-import io.token.banksample.model.AccountTransaction;
+import static java.lang.Math.min;
 
-import java.util.ArrayList;
+import io.token.banksample.model.Payment;
+
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 /**
  * Maintains per account ledger of transactions.
+ *
+ * TODO: This is not a ledger anymore?
+ * TODO: Do we still need transactions here?
  */
 final class AccountLedger {
-    private final List<AccountTransaction> txs;
-    private final Map<String, AccountTransaction> txById;
+    private final List<Payment> payments;
+    private final Map<String, Payment> paymentsById;
 
     AccountLedger() {
-        this.txs = new ArrayList<>();
-        this.txById = new HashMap<>();
+        this.payments = new LinkedList<>();
+        this.paymentsById = new HashMap<>();
     }
 
     /**
-     * Adds transaction to the account ledger.
+     * Adds new payment to the ledger.
      *
-     * @param transaction transaction to add
+     * @param payment payment to add
      */
-    void addTransaction(AccountTransaction transaction) {
-        txs.add(transaction);
-        txById.put(transaction.getTransactionId(), transaction);
+    void createPayment(Payment payment) {
+        payments.add(0, payment);
+        paymentsById.put(payment.getId(), payment);
     }
 
     /**
-     * Looks up a transaction by ID.
+     * Deletes payment from the ledger.
      *
-     * @param id transaction ID
-     * @return looked up transaction
+     * @param paymentId payment id
      */
-    Optional<AccountTransaction> lookupTransaction(String id) {
-        return Optional.ofNullable(txById.get(id));
+    void deletePayment(String paymentId) {
+        Payment deleted = paymentsById.remove(paymentId);
+        payments.remove(deleted);
     }
 
     /**
-     * Looks up multiple transactions.
+     * Looks up a payment by ID.
+     *
+     * @param id payment ID
+     * @return looked up payment
+     */
+    Optional<Payment> lookupPayment(String id) {
+        return Optional.ofNullable(paymentsById.get(id));
+    }
+
+    /**
+     * Looks up multiple payments.
      *
      * @param offset offset to start from
-     * @param limit max number of transactions to lookup
-     * @return list of transactions
+     * @param limit max number of payments to lookup
+     * @return list of payments
      */
-    List<AccountTransaction> lookupTransactions(int offset, int limit) {
-        return txs.subList(offset, offset + limit);
+    List<Payment> lookupPayments(int offset, int limit) {
+        return payments.subList(offset, min(offset + limit, payments.size()));
     }
 }

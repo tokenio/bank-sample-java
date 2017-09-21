@@ -17,6 +17,9 @@ public class CliArgs {
     @Parameter(names = { "--port", "-p" }, description = "gRPC port to listen on")
     int port = 9300;
 
+    @Parameter(names = { "--ssl", "-s" }, description = "Use SSL")
+    boolean useSsl = false;
+
     @Parameter(names = { "--config", "-c" }, description = "Config directory location")
     private Path config = new File("config").toPath();
 

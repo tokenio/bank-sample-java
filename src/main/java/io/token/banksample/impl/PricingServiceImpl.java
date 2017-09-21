@@ -1,6 +1,7 @@
 package io.token.banksample.impl;
 
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
+import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INSUFFICIENT_FUNDS;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INVALID_CURRENCY;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
 
@@ -53,11 +54,21 @@ public class PricingServiceImpl implements PricingService {
                     FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
                     "Account not found: " + destination);
         }
+
+        if (balance.get().getAvailable().compareTo(amount) < 0) {
+            throw new PrepareTransferException(
+                    FAILURE_INSUFFICIENT_FUNDS,
+                    "Balance exceeded");
+        }
+
+        String targetCurrency = counterpartyQuote.getAccountCurrency().isEmpty()
+                ? currency
+                : counterpartyQuote.getAccountCurrency();
         return debitQuote
                 .map(quote -> pricing.lookupQuote(quote.getId()))
                 .orElseGet(() -> pricing.debitQuote(
                         balance.get().getCurrency(),
-                        counterpartyQuote.getAccountCurrency()));
+                        targetCurrency));
     }
     /**
      * Preparing the credit on the beneficiary side. We don't support

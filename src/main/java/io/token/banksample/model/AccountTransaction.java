@@ -1,14 +1,7 @@
 package io.token.banksample.model;
 
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.PROCESSING;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
-import static java.lang.Math.abs;
-
 import com.google.auto.value.AutoValue;
 import io.token.proto.common.account.AccountProtos.BankAccount;
-import io.token.proto.common.money.MoneyProtos;
-import io.token.proto.common.transaction.TransactionProtos.Transaction;
 
 /**
  * Represents a transaction posted to the source and destination accounts. The
@@ -19,7 +12,7 @@ public abstract class AccountTransaction {
     /**
      * Creates new debit transaction.
      *
-     * @param transferId transfer id
+     * @param paymentId payment id
      * @param transactionId transaction id
      * @param account account that transaction is posted for
      * @param counterPartyAccount counter party account
@@ -27,15 +20,15 @@ public abstract class AccountTransaction {
      * @param currency transaction currency
      * @return newly created transaction
      */
-    public static AccountTransaction debit(
-            String transferId,
+    static AccountTransaction debit(
+            String paymentId,
             String transactionId,
             BankAccount account,
             BankAccount counterPartyAccount,
             double amount,
             String currency) {
         return new AutoValue_AccountTransaction(
-                transferId,
+                paymentId,
                 transactionId,
                 account,
                 counterPartyAccount,
@@ -46,7 +39,7 @@ public abstract class AccountTransaction {
     /**
      * Creates new credit transaction.
      *
-     * @param transferId transfer id
+     * @param paymentId payment id
      * @param transactionId transaction id
      * @param account account that transaction is posted for
      * @param counterPartyAccount counter party account
@@ -54,15 +47,15 @@ public abstract class AccountTransaction {
      * @param currency transaction currency
      * @return newly created transaction
      */
-    public static AccountTransaction credit(
-            String transferId,
+    static AccountTransaction credit(
+            String paymentId,
             String transactionId,
             BankAccount account,
             BankAccount counterPartyAccount,
             double amount,
             String currency) {
         return new AutoValue_AccountTransaction(
-                transferId,
+                paymentId,
                 transactionId,
                 account,
                 counterPartyAccount,
@@ -71,11 +64,11 @@ public abstract class AccountTransaction {
     }
 
     /**
-     * Returns unique transfer id.
+     * Returns unique payment id.
      *
-     * @return transfer id
+     * @return payment id
      */
-    public abstract String getTransferId();
+    public abstract String getPaymentId();
 
     /**
      * Returns unique transaction id.
@@ -111,23 +104,4 @@ public abstract class AccountTransaction {
      * @return transaction currency
      */
     public abstract String getCurrency();
-
-    /**
-     * Converts this object to the transaction as defined by the integration
-     * API.
-     *
-     * @return transaction
-     */
-    public Transaction toTransaction() {
-        return Transaction.newBuilder()
-                .setId(getTransactionId())
-                .setTokenTransferId(getTransferId())
-                .setType(getAmount() > 0 ? CREDIT : DEBIT)
-                .setStatus(PROCESSING)
-                .setAmount(MoneyProtos.Money.newBuilder()
-                        .setValue(Double.toString(abs(getAmount())))
-                        .setCurrency(getCurrency())
-                        .build())
-                .build();
-    }
 }

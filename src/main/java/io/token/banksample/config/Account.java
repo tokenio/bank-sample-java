@@ -7,6 +7,8 @@ import io.token.sdk.api.Balance;
 
 import java.math.BigDecimal;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+
 /**
  * A bank account.
  */
@@ -94,6 +96,19 @@ public abstract class Account {
      * @return account balance
      */
     public abstract Balance getBalance();
+
+    /**
+     * Returns true if this account matches the supplied argument.
+     *
+     * @param account account to match against
+     * @return true if matches
+     */
+    public boolean matches(BankAccount account) {
+        return new EqualsBuilder()
+                .append(getBic(), account.getSwift().getBic())
+                .append(getNumber(), account.getSwift().getAccount())
+                .build();
+    }
 
     /**
      * Helper method to convert this object to the proto account definition.

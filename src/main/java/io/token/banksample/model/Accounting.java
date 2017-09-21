@@ -1,8 +1,5 @@
 package io.token.banksample.model;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-
 import io.token.banksample.config.Account;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.Balance;
@@ -39,6 +36,14 @@ public interface Accounting {
     BankAccount getFxAccount(String currency);
 
     /**
+     * Returns FX account for a given currency.
+     *
+     * @param currency currency
+     * @return looked up FX account
+     */
+    BankAccount getRejectAccount(String currency);
+
+    /**
      * Looks up account information.
      *
      * @param bankAccount account to lookup the info for
@@ -57,60 +62,36 @@ public interface Accounting {
     }
 
     /**
-     * Posts the transfer to the specified accounts. The transfer results
-     * in 2 {@link AccountTransaction}s, one for debit and one for credit.
+     * Creates a new payment.
      *
-     * @param transfer transfer instructions
-     * @return debit and credit transactions
+     * @param payment new payment
      */
-    default AccountTransactionPair transfer(AccountTransfer transfer) {
-        return transfer(singletonList(transfer)).get(0);
-    }
+    void createPayment(Payment payment);
 
     /**
-     * Posts the transfer to the specified accounts. Each transfer results
-     * in 2 {@link AccountTransaction}s, one for debit and one for credit.
+     * Looks up payment given the account and payment ID.
      *
-     * @param transfers transfer instructions
-     * @return debit and credit transactions
+     * @param account account to lookup the payment for
+     * @param paymentId payment id
+     * @return looked up payment
      */
-    default List<AccountTransactionPair> transfer(AccountTransfer ... transfers) {
-       return transfer(asList(transfers));
-    }
+    Optional<Payment> lookupPayment(BankAccount account, String paymentId);
 
     /**
-     * Posts the transfer to the specified accounts. Each transfer results
-     * in 2 {@link AccountTransaction}s, one for debit and one for credit.
+     * Looks up payments for the given account.
      *
-     * @param transfers transfer instructions
-     * @return debit and credit transactions
-     */
-    List<AccountTransactionPair> transfer(List<AccountTransfer> transfers);
-
-    /**
-     * Looks up an existing transfer.
-     *
-     * @param transferId transfer id
-     * @return transfer object
-     */
-    Optional<AccountTransfer> lookupTransfer(String transferId);
-
-    /**
-     * Looks up transaction given the account and transaction ID.
-     *
-     * @param account account to lookup the transaction for
-     * @param transactionId transaction id
-     * @return looked up transaction
-     */
-    Optional<AccountTransaction> lookupTransaction(BankAccount account, String transactionId);
-
-    /**
-     * Looks up transactions for the given account.
-     *
-     * @param account account to lookup the transactions for
+     * @param account account to lookup the payments for
      * @param offset the result offset
      * @param limit the limit on the number of results returned
-     * @return list of looked up transactions
+     * @return list of looked up payments
      */
-    List<AccountTransaction> lookupTransactions(BankAccount account, int offset, int limit);
+    List<Payment> lookupPayments(BankAccount account, int offset, int limit);
+
+    /**
+     * Deletes an existing payment.
+     *
+     * @param account account that the payment belongs to
+     * @param paymentId payment id
+     */
+    void deletePayment(BankAccount account, String paymentId);
 }
