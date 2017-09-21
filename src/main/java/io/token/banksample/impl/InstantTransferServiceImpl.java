@@ -220,8 +220,6 @@ public class InstantTransferServiceImpl implements InstantTransferService {
      * point, so simply debit settlement account and credit end user destination
      * account.
      *
-     * TODO: Apply fees
-     *
      * {@inheritDoc}
      */
     @Override
