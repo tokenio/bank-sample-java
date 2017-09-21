@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 /**
- * A bank account.
+ * A bank account configuration.
  */
 @AutoValue
 public abstract class Account {
@@ -53,7 +53,7 @@ public abstract class Account {
      * @param balance account balance
      * @return newly created account
      */
-    static Account create(
+    private static Account create(
             String name,
             Address address,
             String bic,

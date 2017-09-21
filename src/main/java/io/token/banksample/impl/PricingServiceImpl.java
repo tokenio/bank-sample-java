@@ -86,14 +86,13 @@ public class PricingServiceImpl implements PricingService {
             TransferEndpoint destination,
             PurposeOfPayment paymentPurpose,
             Optional<TransferQuote> creditQuote) {
-        Optional<Balance> balance = accounts.lookupBalance(destination.getAccount());
-        if (!balance.isPresent()) {
-            throw new PrepareTransferException(
-                    FAILURE_DESTINATION_ACCOUNT_NOT_FOUND,
-                    "Account not found: " + destination);
-        }
+        Balance balance = accounts
+                .lookupBalance(destination.getAccount())
+                .orElseThrow(() -> new PrepareTransferException(
+                        FAILURE_DESTINATION_ACCOUNT_NOT_FOUND,
+                        "Account not found: " + destination));
 
-        if (!balance.get().getCurrency().equals(currency)) {
+        if (!balance.getCurrency().equals(currency)) {
             throw new PrepareTransferException(
                     FAILURE_INVALID_CURRENCY,
                     "Credit side FX is not supported");
@@ -101,6 +100,6 @@ public class PricingServiceImpl implements PricingService {
 
         return creditQuote
                 .map(quote -> pricing.lookupQuote(quote.getId()))
-                .orElseGet(() -> pricing.creditQuote(currency, balance.get().getCurrency()));
+                .orElseGet(() -> pricing.creditQuote(currency, balance.getCurrency()));
     }
 }

@@ -6,7 +6,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.token.banksample.config.Account;
 import io.token.banksample.model.Accounting;
-import io.token.banksample.model.Payment;
+import io.token.banksample.model.AccountTransaction;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
@@ -58,8 +58,8 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Optional<Transaction> getTransaction(BankAccount account, String transactionId) {
         return accounts
-                .lookupPayment(account, transactionId)
-                .map(Payment::toTransaction);
+                .tryLookupPayment(account, transactionId)
+                .map(AccountTransaction::toTransaction);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class AccountServiceImpl implements AccountService {
         return accounts
                 .lookupPayments(account, offset, limit)
                 .stream()
-                .map(Payment::toTransaction)
+                .map(AccountTransaction::toTransaction)
                 .collect(toList());
     }
 }

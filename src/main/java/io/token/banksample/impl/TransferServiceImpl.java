@@ -4,8 +4,8 @@ import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILUR
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_GENERIC;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 
+import io.token.banksample.model.AccountTransaction;
 import io.token.banksample.model.Accounting;
-import io.token.banksample.model.Payment;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.sdk.api.Balance;
 import io.token.sdk.api.PrepareTransferException;
@@ -13,7 +13,6 @@ import io.token.sdk.api.Transfer;
 import io.token.sdk.api.TransferException;
 import io.token.sdk.api.service.TransferService;
 
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -28,30 +27,29 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     public Transaction transfer(Transfer transfer) throws TransferException {
-        Optional<Balance> balance = accounts.lookupBalance(transfer.getAccount());
-        if (!balance.isPresent()) {
-            throw new TransferException(
-                    FAILURE_GENERIC,
-                    "Account not found: " + transfer.getAccount());
-        }
+        Balance balance = accounts
+                .lookupBalance(transfer.getAccount())
+                .orElseThrow(() -> new TransferException(
+                        FAILURE_GENERIC,
+                        "Account not found: " + transfer.getAccount()));
 
-        if (balance.get().getAvailable().compareTo(transfer.getTransactionAmount()) < 0) {
+        if (balance.getAvailable().compareTo(transfer.getTransactionAmount()) < 0) {
             throw new PrepareTransferException(
                     FAILURE_INSUFFICIENT_FUNDS,
                     "Balance exceeded");
         }
 
-        Payment payment = Payment.builder(DEBIT)
+        AccountTransaction transaction = AccountTransaction.builder(DEBIT)
                 .id(UUID.randomUUID().toString())
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getDestinations().get(0).getAccount())
-                .withAmount(
+                .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
-                .withDescription(transfer.getDescription())
+                .description(transfer.getDescription())
                 .build();
-        accounts.createPayment(payment);
-        return payment.toTransaction();
+        accounts.createPayment(transaction);
+        return transaction.toTransaction();
     }
 }

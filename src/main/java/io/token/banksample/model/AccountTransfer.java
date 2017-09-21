@@ -2,9 +2,6 @@ package io.token.banksample.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.token.banksample.model.AccountTransaction.credit;
-import static io.token.banksample.model.AccountTransaction.debit;
-import static io.token.banksample.model.AccountTransactionPair.transactionPair;
 import static java.lang.Double.parseDouble;
 
 import com.google.auto.value.AutoValue;
@@ -23,67 +20,44 @@ public abstract class AccountTransfer {
      *
      * @return new builder
      */
-    public static Builder transfer() {
+    public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Returns transfer id.
+     * Returns updatePayment id.
      *
-     * @return transfer id
+     * @return updatePayment id
      */
     public abstract String getTransferId();
 
     /**
-     * Returns transfer source/from account.
+     * Returns updatePayment source/from account.
      *
      * @return from account
      */
     public abstract BankAccount getFrom();
 
     /**
-     * Returns transfer destination/to account.
+     * Returns updatePayment destination/to account.
      *
      * @return to account
      */
     public abstract BankAccount getTo();
 
     /**
-     * Returns transfer amount.
+     * Returns updatePayment amount.
      *
-     * @return transfer amount
+     * @return updatePayment amount
      */
     public abstract double getAmount();
 
     /**
-     * Returns transfer currency.
+     * Returns updatePayment currency.
      *
      * @return currency
      */
     public abstract String getCurrency();
-
-    /**
-     * Converts the transfer into a pair of transactions, debit and credit.
-     *
-     * @return transaction pair
-     */
-    public AccountTransactionPair toTransactionPair() {
-        return transactionPair(
-                debit(
-                        getTransferId(),
-                        getTransferId() + ":debit",
-                        getFrom(),
-                        getTo(),
-                        getAmount(),
-                        getCurrency()),
-                credit(
-                        getTransferId(),
-                        getTransferId() + ":credit",
-                        getTo(),
-                        getFrom(),
-                        getAmount(),
-                        getCurrency()));
-    }
 
     /**
      * {@link AccountTransfer} builder.
@@ -98,9 +72,9 @@ public abstract class AccountTransfer {
         private Builder() {}
 
         /**
-         * Sets unique transfer id.
+         * Sets unique updatePayment id.
          *
-         * @param transferId transfer id
+         * @param transferId updatePayment id
          * @return this object
          */
         public Builder transferId(String transferId) {
@@ -131,10 +105,10 @@ public abstract class AccountTransfer {
         }
 
         /**
-         * Sets transfer amount.
+         * Sets updatePayment amount.
          *
-         * @param amount transfer amount
-         * @param currency transfer currency
+         * @param amount updatePayment amount
+         * @param currency updatePayment currency
          * @return this object
          */
         public Builder withAmount(double amount, String currency) {
@@ -144,9 +118,9 @@ public abstract class AccountTransfer {
         }
 
         /**
-         * Sets transfer amount.
+         * Sets updatePayment amount.
          *
-         * @param amount transfer amount
+         * @param amount updatePayment amount
          * @return this object
          */
         public Builder withAmount(Money amount) {

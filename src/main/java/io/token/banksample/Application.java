@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Main service class. {@link CliArgs defines the available command line arguments}.
+ * Main service class. {@link CliArgs} defines the available command line arguments}.
  * The application parses command line arguments and then configures and starts
  * gRPC server that listens for incoming requests.
  */

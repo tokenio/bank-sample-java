@@ -28,7 +28,6 @@ import java.util.List;
  * exposed by the gRPC server.
  */
 final class Factory {
-    private final Configuration config;
     private final Accounting accounting;
     private final Pricing pricing;
 
@@ -39,27 +38,24 @@ final class Factory {
      */
     Factory(String configFilePath) {
         File configFile = new File(configFilePath);
-        this.config = new Configuration(ConfigFactory.parseFile(configFile));
+        Configuration config = new Configuration(ConfigFactory.parseFile(configFile));
 
         List<Account> accounts = config.accounts();
-        List<Account> holdAccounts = accounts.stream()
+        List<String> currencies = accounts.stream()
                 .map(a -> a.getBalance().getCurrency())
                 .distinct()
+                .collect(toList());
+
+        List<Account> holdAccounts = currencies.stream()
                 .map(config::holdAccountFor)
                 .collect(toList());
-        List<Account> settlementAccounts = accounts.stream()
-                .map(a -> a.getBalance().getCurrency())
-                .distinct()
+        List<Account> settlementAccounts = currencies.stream()
                 .map(config::settlementAccountFor)
                 .collect(toList());
-        List<Account> fxAccounts = accounts.stream()
-                .map(a -> a.getBalance().getCurrency())
-                .distinct()
+        List<Account> fxAccounts = currencies.stream()
                 .map(config::fxAccountFor)
                 .collect(toList());
-        List<Account> rejectAccounts = accounts.stream()
-                .map(a -> a.getBalance().getCurrency())
-                .distinct()
+        List<Account> rejectAccounts = currencies.stream()
                 .map(config::rejectAccountFor)
                 .collect(toList());
         this.accounting = new AccountingImpl(
@@ -101,7 +97,7 @@ final class Factory {
     /**
      * Creates new {@link InstantTransferService} instance.
      *
-     * @return new instant transfer service instance
+     * @return new instant updatePayment service instance
      */
     InstantTransferService instantTransferService() {
         return new InstantTransferServiceImpl(accounting, pricing);
@@ -110,7 +106,7 @@ final class Factory {
     /**
      * Creates new {@link TransferService} instance.
      *
-     * @return new transfer service instance
+     * @return new updatePayment service instance
      */
     TransferService transferService() {
         return new TransferServiceImpl(accounting);

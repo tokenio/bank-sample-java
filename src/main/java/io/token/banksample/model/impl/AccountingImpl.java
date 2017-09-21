@@ -4,14 +4,14 @@ import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILUR
 import static java.util.stream.Collectors.toMap;
 
 import io.token.banksample.config.Account;
+import io.token.banksample.model.AccountTransaction;
+import io.token.banksample.model.AccountTransfer;
 import io.token.banksample.model.Accounting;
-import io.token.banksample.model.Payment;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.PrepareTransferException;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,8 +26,7 @@ public final class AccountingImpl implements Accounting {
     private final Map<String, Account> settlementAccounts;
     private final Map<String, Account> fxAccounts;
     private final Map<String, Account> rejectAccounts;
-    private final Collection<Account> accounts;
-    private final Map<Account, AccountLedger> payments;
+    private final Map<Account, AccountLedger> accounts;
 
     public AccountingImpl(
             Collection<Account> holdAccounts,
@@ -39,16 +38,18 @@ public final class AccountingImpl implements Accounting {
         this.settlementAccounts = indexAccounts(settlementAccounts);
         this.fxAccounts = indexAccounts(fxAccounts);
         this.rejectAccounts = indexAccounts(rejectAccounts);
-
-        this.accounts = new ArrayList<>();
-        this.accounts.addAll(holdAccounts);
-        this.accounts.addAll(settlementAccounts);
-        this.accounts.addAll(fxAccounts);
-        this.accounts.addAll(customerAccounts);
-        this.accounts.addAll(rejectAccounts);
-
-        this.payments = new HashMap<>();
-        this.accounts.forEach(a -> this.payments.put(a, new AccountLedger()));
+        this.accounts =
+                new ArrayList<Account>() {{
+                    addAll(holdAccounts);
+                    addAll(settlementAccounts);
+                    addAll(fxAccounts);
+                    addAll(customerAccounts);
+                    addAll(rejectAccounts);
+                }}
+                        .stream()
+                        .collect(toMap(
+                                a -> a,
+                                a -> new AccountLedger()));
     }
 
     @Override
@@ -94,45 +95,53 @@ public final class AccountingImpl implements Accounting {
     @Override
     public synchronized Optional<Account> lookupAccount(BankAccount account) {
         return toSwiftAccount(account)
-                .flatMap(swift -> accounts.stream()
+                .flatMap(swift -> accounts.keySet().stream()
                         .filter(a -> a.getBic().equals(swift.getBic()))
                         .filter(a -> a.getNumber().equals(swift.getAccount()))
                         .findFirst());
     }
 
     @Override
-    public synchronized void createPayment(Payment payment) {
-        Account account = lookupAccountOrThrow(payment.getFrom());
-        AccountLedger ledger = payments.get(account);
-        ledger.createPayment(payment);
+    public synchronized void createPayment(AccountTransaction transaction) {
+        Account account = lookupAccountOrThrow(transaction.getFrom());
+        AccountLedger ledger = accounts.get(account);
+        ledger.createPayment(transaction);
     }
 
     @Override
-    public synchronized Optional<Payment> lookupPayment(
+    public synchronized Optional<AccountTransaction> tryLookupPayment(
             BankAccount account,
             String paymentId) {
-        Account lookedUpAccount = lookupAccountOrThrow(account);
-        return payments
-                .getOrDefault(lookedUpAccount, new AccountLedger())
+        return accounts
+                .get(lookupAccountOrThrow(account))
                 .lookupPayment(paymentId);
     }
 
     @Override
-    public synchronized List<Payment> lookupPayments(
+    public synchronized List<AccountTransaction> lookupPayments(
             BankAccount account,
             int offset,
             int limit) {
-        Account lookedUpAccount = lookupAccountOrThrow(account);
-        return payments
-                .getOrDefault(lookedUpAccount, new AccountLedger())
+        return accounts
+                .get(lookupAccountOrThrow(account))
                 .lookupPayments(offset, limit);
     }
 
     @Override
     public synchronized void deletePayment(BankAccount account, String paymentId) {
-        payments
+        accounts
                 .get(lookupAccountOrThrow(account))
                 .deletePayment(paymentId);
+    }
+
+    @Override
+    public synchronized void post(AccountTransfer... transfers) {
+        for (AccountTransfer transfer : transfers) {
+            AccountLedgerEntry debit = AccountLedgerEntry.debit(transfer);
+            AccountLedgerEntry credit = AccountLedgerEntry.credit(transfer);
+            accounts.get(lookupAccountOrThrow(debit.getAccount())).post(debit);
+            accounts.get(lookupAccountOrThrow(credit.getAccount())).post(credit);
+        }
     }
 
     private Account lookupAccountOrThrow(BankAccount account) {

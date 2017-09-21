@@ -1,5 +1,6 @@
 package io.token.banksample.model;
 
+import io.grpc.Status;
 import io.token.banksample.config.Account;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.Balance;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Transaction accounting service. Abstracts away bank account data store.
+ * AccountTransaction accounting service. Abstracts away bank account data store.
  */
 public interface Accounting {
     /**
@@ -62,11 +63,11 @@ public interface Accounting {
     }
 
     /**
-     * Creates a new payment.
+     * Creates a new transaction.
      *
-     * @param payment new payment
+     * @param transaction new transaction
      */
-    void createPayment(Payment payment);
+    void createPayment(AccountTransaction transaction);
 
     /**
      * Looks up payment given the account and payment ID.
@@ -75,7 +76,22 @@ public interface Accounting {
      * @param paymentId payment id
      * @return looked up payment
      */
-    Optional<Payment> lookupPayment(BankAccount account, String paymentId);
+    default AccountTransaction lookupPayment(BankAccount account, String paymentId) {
+        return tryLookupPayment(account, paymentId).orElseThrow(() ->
+                Status
+                        .NOT_FOUND
+                        .withDescription("AccountTransaction not found: " + paymentId)
+                        .asRuntimeException());
+    }
+
+    /**
+     * Looks up payment given the account and payment ID.
+     *
+     * @param account account to lookup the payment for
+     * @param paymentId payment id
+     * @return looked up payment if found
+     */
+    Optional<AccountTransaction> tryLookupPayment(BankAccount account, String paymentId);
 
     /**
      * Looks up payments for the given account.
@@ -85,7 +101,7 @@ public interface Accounting {
      * @param limit the limit on the number of results returned
      * @return list of looked up payments
      */
-    List<Payment> lookupPayments(BankAccount account, int offset, int limit);
+    List<AccountTransaction> lookupPayments(BankAccount account, int offset, int limit);
 
     /**
      * Deletes an existing payment.
@@ -94,4 +110,11 @@ public interface Accounting {
      * @param paymentId payment id
      */
     void deletePayment(BankAccount account, String paymentId);
+
+    /**
+     * Posts account transactions for a given post.
+     *
+     * @param transfers list of transfers to post
+     */
+    void post(AccountTransfer ... transfers);
 }
