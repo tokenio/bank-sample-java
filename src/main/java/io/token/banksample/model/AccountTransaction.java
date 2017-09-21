@@ -5,10 +5,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.money.MoneyProtos;
-import io.token.proto.common.transaction.TransactionProtos;
+import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transaction.TransactionProtos.TransactionStatus;
 import io.token.proto.common.transaction.TransactionProtos.TransactionType;
 
+/**
+ * Represents an account transaction. The transaction captures from, to, amount
+ * and the current status.
+ */
 public final class AccountTransaction {
     private final TransactionType type;
     private final String id;
@@ -18,15 +22,34 @@ public final class AccountTransaction {
     private final double amount;
     private final String currency;
     private final String description;
-    private TransactionStatus status;
+    private volatile TransactionStatus status;
 
+    /**
+     * Creates new transaction builder.
+     *
+     * @param type transaction type
+     * @return transaction builder
+     */
     public static Builder builder(TransactionType type) {
         return new Builder(type);
     }
 
+    /**
+     * Creates new transaction instance.
+     *
+     * @param type transaction type
+     * @param id  transaction id
+     * @param referenceId transaction reference id, used to capture caller
+     *      transaction identifier
+     * @param from from / remitter account
+     * @param to to / beneficiary account
+     * @param amount transaction amount
+     * @param currency transaction currency
+     * @param description transaction description
+     */
     private AccountTransaction(
             TransactionType type,
-            String paymentId,
+            String id,
             String referenceId,
             BankAccount from,
             BankAccount to,
@@ -34,7 +57,7 @@ public final class AccountTransaction {
             String currency,
             String description) {
         this.type = type;
-        this.id = paymentId;
+        this.id = id;
         this.referenceId = referenceId;
         this.from = from;
         this.to = to;
@@ -44,34 +67,74 @@ public final class AccountTransaction {
         this.status = TransactionStatus.PROCESSING;
     }
 
+    /**
+     * Returns transaction type.
+     *
+     * @return transaction type
+     */
     public TransactionType getType() {
         return type;
     }
 
+    /**
+     * Returns transaction ID.
+     *
+     * @return transaction ID
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns transaction reference ID.
+     *
+     * @return transaction reference ID
+     */
     public String getReferenceId() {
         return referenceId;
     }
 
+    /**
+     * Returns transaction from / remitter.
+     *
+     * @return transaction from / remitter
+     */
     public BankAccount getFrom() {
         return from;
     }
 
+    /**
+     * Returns transaction to / beneficiary.
+     *
+     * @return transaction to / beneficiary
+     */
     public BankAccount getTo() {
         return to;
     }
 
+    /**
+     * Returns transaction amount.
+     *
+     * @return transaction amount
+     */
     public double getAmount() {
         return amount;
     }
 
+    /**
+     * Returns transaction currency.
+     *
+     * @return transaction currency
+     */
     public String getCurrency() {
         return currency;
     }
 
+    /**
+     * Sets transaction status.
+     *
+     * @param status new transaction status
+     */
     public void setStatus(TransactionStatus status) {
         this.status = status;
     }
@@ -82,8 +145,8 @@ public final class AccountTransaction {
      *
      * @return transaction
      */
-    public TransactionProtos.Transaction toTransaction() {
-        return TransactionProtos.Transaction.newBuilder()
+    public Transaction toTransaction() {
+        return Transaction.newBuilder()
                 .setId(id)
                 .setTokenTransferId(getReferenceId())
                 .setType(getType())
@@ -96,6 +159,9 @@ public final class AccountTransaction {
                 .build();
     }
 
+    /**
+     * Used to build {@link AccountTransaction} instances.
+     */
     public static final class Builder {
         private final TransactionType type;
         private String id;
@@ -106,42 +172,91 @@ public final class AccountTransaction {
         private String currency;
         private String description;
 
+        /**
+         * Creates new builder.
+         *
+         * @param type transaction type
+         */
         private Builder(TransactionType type) {
             this.type = type;
             this.description = "";
         }
 
+        /**
+         * Sets unique transaction ID.
+         *
+         * @param id transaction ID
+         * @return this builder
+         */
         public Builder id(String id) {
             this.id = id;
             return this;
         }
 
+        /**
+         * Sets transaction reference id. Reference ID captures the external
+         * transaction ID.
+         *
+         * @param referenceId reference id
+         * @return this builder
+         */
         public Builder referenceId(String referenceId) {
             this.referenceId = referenceId;
             return this;
         }
 
+        /**
+         * Sets from / remitter account.
+         *
+         * @param account remitter account
+         * @return this builder
+         */
         public Builder from(BankAccount account) {
             this.from = account;
             return this;
         }
 
+        /**
+         * Sets to / beneficiary account.
+         *
+         * @param account beneficiary account
+         * @return this builder
+         */
         public Builder to(BankAccount account) {
             this.to = account;
             return this;
         }
 
-        public Builder withAmount(double amount, String currency) {
+        /**
+         * Sets transaction amount.
+         *
+         * @param amount transaction amount
+         * @param currency transaction currency
+         * @return this builder
+         */
+        public Builder amount(double amount, String currency) {
             this.amount = amount;
             this.currency = currency;
             return this;
         }
 
-        public Builder withDescription(String description) {
+        /**
+         * Sets transaction description.
+         *
+         * @param description transaction description
+         * @return this builder
+         */
+        public Builder description(String description) {
             this.description = description;
             return this;
         }
 
+        /**
+         * Finishes building {@link AccountTransaction} instance and returns it
+         * to the caller.
+         *
+         * @return built transaction instance
+         */
         public AccountTransaction build() {
             checkArgument(amount > 0, "Amount must be set");
             return new AccountTransaction(

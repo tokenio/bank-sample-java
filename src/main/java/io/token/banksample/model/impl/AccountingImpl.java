@@ -135,7 +135,7 @@ public final class AccountingImpl implements Accounting {
     }
 
     @Override
-    public void post(AccountTransfer... transfers) {
+    public synchronized void post(AccountTransfer... transfers) {
         for (AccountTransfer transfer : transfers) {
             AccountLedgerEntry debit = AccountLedgerEntry.debit(transfer);
             AccountLedgerEntry credit = AccountLedgerEntry.credit(transfer);

@@ -1,6 +1,5 @@
 package io.token.banksample.impl;
 
-import static io.token.banksample.model.AccountTransfer.transfer;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_CANCELED;
@@ -12,6 +11,7 @@ import static io.token.sdk.util.ProtoFactory.newMoney;
 
 import io.token.banksample.config.Account;
 import io.token.banksample.model.AccountTransaction;
+import io.token.banksample.model.AccountTransfer;
 import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Pricing;
 import io.token.proto.common.account.AccountProtos.BankAccount;
@@ -60,10 +60,10 @@ public class InstantTransferServiceImpl implements InstantTransferService {
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getCounterpartyAccount().getAccount())
-                .withAmount(
+                .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
-                .withDescription(transfer.getDescription())
+                .description(transfer.getDescription())
                 .build();
         accounts.createPayment(transaction);
 
@@ -71,7 +71,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             transaction.setStatus(FAILURE_CANCELED);
         } else if (!transfer.getPricing().hasSourceQuote()) {
             // If FX is not needed, just move the money to the holding account.
-            accounts.post(transfer()
+            accounts.post(AccountTransfer.builder()
                     .transferId(transfer.getTokenTransferId())
                     .from(transfer.getAccount())
                     .to(accounts.getHoldAccount(transfer.getTransactionAmountCurrency()))
@@ -87,7 +87,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             // transaction pair, it goes 'nowhere'.
             pricing.redeemQuote(transfer.getPricing().getSourceQuote());
             accounts.post(
-                    transfer()
+                    AccountTransfer.builder()
                             .transferId(transfer.getTokenTransferId())
                             .from(transfer.getAccount())
                             .to(accounts.getFxAccount(transfer.getTransactionAmountCurrency()))
@@ -95,7 +95,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
                                     transfer.getTransactionAmount().doubleValue(),
                                     transfer.getTransactionAmountCurrency())
                             .build(),
-                    transfer()
+                    AccountTransfer.builder()
                             .transferId(transfer.getTokenTransferId())
                             .from(accounts.getFxAccount(transfer.getSettlementAmountCurrency()))
                             .to(accounts.getHoldAccount(transfer.getSettlementAmountCurrency()))
@@ -130,7 +130,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             Money amount) {
         AccountTransaction transaction = accounts.lookupPayment(account, transactionId);
         transaction.setStatus(SUCCESS);
-        accounts.post(transfer()
+        accounts.post(AccountTransfer.builder()
                 .transferId(transferId)
                 .from(transaction.getTo())
                 .to(accounts.getSettlementAccount(transaction.getCurrency()))
@@ -151,7 +151,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             Money amount) {
         AccountTransaction transaction = accounts.lookupPayment(account, transactionId);
         transaction.setStatus(FAILURE_CANCELED);
-        accounts.post(transfer()
+        accounts.post(AccountTransfer.builder()
                 .transferId(transferId)
                 .from(transaction.getTo())
                 .to(transaction.getFrom())
@@ -199,10 +199,10 @@ public class InstantTransferServiceImpl implements InstantTransferService {
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getCounterpartyAccount().getAccount())
-                .withAmount(
+                .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
-                .withDescription(transfer.getDescription())
+                .description(transfer.getDescription())
                 .build();
         accounts.createPayment(transaction);
 
@@ -232,7 +232,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             Money amount) {
         AccountTransaction transaction = accounts.lookupPayment(account, transactionId);
         transaction.setStatus(SUCCESS);
-        accounts.post(transfer()
+        accounts.post(AccountTransfer.builder()
                 .transferId(transferId)
                 .from(accounts.getSettlementAccount(amount.getCurrency()))
                 .to(account)

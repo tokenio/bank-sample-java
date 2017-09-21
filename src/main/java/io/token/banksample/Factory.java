@@ -41,24 +41,21 @@ final class Factory {
         Configuration config = new Configuration(ConfigFactory.parseFile(configFile));
 
         List<Account> accounts = config.accounts();
-        List<Account> holdAccounts = accounts.stream()
+        List<String> currencies = accounts.stream()
                 .map(a -> a.getBalance().getCurrency())
                 .distinct()
+                .collect(toList());
+
+        List<Account> holdAccounts = currencies.stream()
                 .map(config::holdAccountFor)
                 .collect(toList());
-        List<Account> settlementAccounts = accounts.stream()
-                .map(a -> a.getBalance().getCurrency())
-                .distinct()
+        List<Account> settlementAccounts = currencies.stream()
                 .map(config::settlementAccountFor)
                 .collect(toList());
-        List<Account> fxAccounts = accounts.stream()
-                .map(a -> a.getBalance().getCurrency())
-                .distinct()
+        List<Account> fxAccounts = currencies.stream()
                 .map(config::fxAccountFor)
                 .collect(toList());
-        List<Account> rejectAccounts = accounts.stream()
-                .map(a -> a.getBalance().getCurrency())
-                .distinct()
+        List<Account> rejectAccounts = currencies.stream()
                 .map(config::rejectAccountFor)
                 .collect(toList());
         this.accounting = new AccountingImpl(

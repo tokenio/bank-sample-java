@@ -44,10 +44,10 @@ public class TransferServiceImpl implements TransferService {
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getDestinations().get(0).getAccount())
-                .withAmount(
+                .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
-                .withDescription(transfer.getDescription())
+                .description(transfer.getDescription())
                 .build();
         accounts.createPayment(transaction);
         return transaction.toTransaction();

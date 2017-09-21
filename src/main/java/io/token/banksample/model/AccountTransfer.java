@@ -20,7 +20,7 @@ public abstract class AccountTransfer {
      *
      * @return new builder
      */
-    public static Builder transfer() {
+    public static Builder builder() {
         return new Builder();
     }
 
