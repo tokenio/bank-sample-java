@@ -76,7 +76,7 @@ public final class PricingImpl implements Pricing {
 
         TransferQuote quote = TransferQuote.newBuilder()
                 .setId(UUID.randomUUID().toString())
-                .setAccountCurrency(quoteCurrency)
+                .setAccountCurrency(baseCurrency)
                 .setFeesTotal("0")
                 .addRates(fxRate)
                 .setExpiresAtMs(Instant.now()
@@ -90,7 +90,7 @@ public final class PricingImpl implements Pricing {
 
     @Override
     public synchronized void redeemQuote(TransferQuote quote) {
-        TransferQuote lookedUp = quotes.remove(quote.getId());
+        TransferQuote lookedUp = quotes.get(quote.getId());
         if (!quote.equals(lookedUp)) {
             throw new PrepareTransferException(
                     FAILURE_INVALID_QUOTE,

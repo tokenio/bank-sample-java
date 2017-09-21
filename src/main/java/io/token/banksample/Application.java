@@ -1,6 +1,5 @@
 package io.token.banksample;
 
-import io.token.rpc.server.RpcServer;
 import io.token.sdk.ServerBuilder;
 
 import java.io.IOException;
@@ -30,22 +29,24 @@ public final class Application {
         Factory factory = new Factory(args.configPath("application.conf"));
 
         // Build a gRPC server instance.
-        RpcServer server = ServerBuilder
+        ServerBuilder server = ServerBuilder
                 .forPort(args.port)
-                .withTls(
-                        args.configPath("tls", "cert.pem"),
-                        args.configPath("tls", "key.pem"),
-                        args.configPath("tls", "trusted-certs.pem"))
                 .reportErrorDetails()
                 .withAccountService(factory.accountService())
                 .withInstantTransferService(factory.instantTransferService())
                 .withTransferService(factory.transferService())
                 .withPricingService(factory.pricingService())
-                .withStorageService(factory.storageService())
-                .build();
+                .withStorageService(factory.storageService());
+        if (args.useSsl) {
+                server.withTls(
+                    args.configPath("tls", "cert.pem"),
+                    args.configPath("tls", "key.pem"),
+                    args.configPath("tls", "trusted-certs.pem"));
+        }
 
         // You will need to Ctrl-C to exit.
         server
+                .build()
                 .start()
                 .await();
     }

@@ -58,15 +58,7 @@ public final class Configuration {
      * @return hold account for the given currency
      */
     public Account holdAccountFor(String currency) {
-        String bic = config.getString("accounts.hold.bic");
-        String numberFormat = config.getString("accounts.hold.number_format");
-        return Account.create(
-                "Holding account - " + currency,
-                Address.getDefaultInstance(),
-                bic,
-                format(numberFormat, currency),
-                currency,
-                0);
+        return accountForTemplate("hold", currency);
     }
 
     /**
@@ -76,15 +68,7 @@ public final class Configuration {
      * @return settlement account for the given currency
      */
     public Account settlementAccountFor(String currency) {
-        String bic = config.getString("accounts.settlement.bic");
-        String numberFormat = config.getString("accounts.settlement.number_format");
-        return Account.create(
-                "Settlement account - " + currency,
-                Address.getDefaultInstance(),
-                bic,
-                format(numberFormat, currency),
-                currency,
-                0);
+        return accountForTemplate("settlement", currency);
     }
 
     /**
@@ -94,15 +78,17 @@ public final class Configuration {
      * @return FX account for the given currency
      */
     public Account fxAccountFor(String currency) {
-        String bic = config.getString("accounts.fx.bic");
-        String numberFormat = config.getString("accounts.fx.number_format");
-        return Account.create(
-                "FX account - " + currency,
-                Address.getDefaultInstance(),
-                bic,
-                format(numberFormat, currency),
-                currency,
-                0);
+        return accountForTemplate("fx", currency);
+    }
+
+    /**
+     * Reject account info for the given currency.
+     *
+     * @param currency currency to extract the reject account for
+     * @return FX account for the given currency
+     */
+    public Account rejectAccountFor(String currency) {
+        return accountForTemplate("reject", currency);
     }
 
     /**
@@ -127,5 +113,22 @@ public final class Configuration {
                                     .build());
                 })
                 .collect(toList());
+    }
+
+    private Account accountForTemplate(String pattern, String currency) {
+        Config accountConfig = config.getConfig("accounts." + pattern);
+
+        String bic = accountConfig.getString("bic");
+        String numberFormat = accountConfig.getString("number_format");
+        double balance = accountConfig.hasPath("balance")
+                ? accountConfig.getDouble("balance")
+                : 0;
+        return Account.create(
+                "Reject account - " + currency,
+                Address.getDefaultInstance(),
+                bic,
+                format(numberFormat, currency),
+                currency,
+                balance);
     }
 }

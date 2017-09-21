@@ -41,27 +41,33 @@ final class Factory {
         File configFile = new File(configFilePath);
         this.config = new Configuration(ConfigFactory.parseFile(configFile));
 
-        List<Account> customerAccounts = config.accounts();
-        List<Account> holdAccounts = customerAccounts.stream()
+        List<Account> accounts = config.accounts();
+        List<Account> holdAccounts = accounts.stream()
                 .map(a -> a.getBalance().getCurrency())
                 .distinct()
                 .map(config::holdAccountFor)
                 .collect(toList());
-        List<Account> settlementAccounts = customerAccounts.stream()
+        List<Account> settlementAccounts = accounts.stream()
                 .map(a -> a.getBalance().getCurrency())
                 .distinct()
                 .map(config::settlementAccountFor)
                 .collect(toList());
-        List<Account> fxAccounts = customerAccounts.stream()
+        List<Account> fxAccounts = accounts.stream()
                 .map(a -> a.getBalance().getCurrency())
                 .distinct()
                 .map(config::fxAccountFor)
+                .collect(toList());
+        List<Account> rejectAccounts = accounts.stream()
+                .map(a -> a.getBalance().getCurrency())
+                .distinct()
+                .map(config::rejectAccountFor)
                 .collect(toList());
         this.accounting = new AccountingImpl(
                 holdAccounts,
                 settlementAccounts,
                 fxAccounts,
-                customerAccounts);
+                rejectAccounts,
+                accounts);
         this.pricing = new PricingImpl(config.fxRates());
     }
 

@@ -95,13 +95,15 @@ public abstract class AccountTransfer {
         private double amount;
         private String currency;
 
+        private Builder() {}
+
         /**
          * Sets unique transfer id.
          *
          * @param transferId transfer id
          * @return this object
          */
-        public Builder withId(String transferId) {
+        public Builder transferId(String transferId) {
             this.transferId = transferId;
             return this;
         }
