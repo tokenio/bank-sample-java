@@ -13,9 +13,6 @@ import java.util.Optional;
 
 /**
  * Maintains per account ledger of transactions.
- *
- * TODO: This is not a ledger anymore?
- * TODO: Do we still need transactions here?
  */
 final class AccountLedger {
     private final List<AccountTransaction> payments;
