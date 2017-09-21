@@ -1,107 +1,158 @@
 package io.token.banksample.model;
 
-import com.google.auto.value.AutoValue;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import io.token.proto.common.account.AccountProtos.BankAccount;
+import io.token.proto.common.money.MoneyProtos;
+import io.token.proto.common.transaction.TransactionProtos;
+import io.token.proto.common.transaction.TransactionProtos.TransactionStatus;
+import io.token.proto.common.transaction.TransactionProtos.TransactionType;
 
-/**
- * Represents a transaction posted to the source and destination accounts. The
- * change credits one account and debits the other.
- */
-@AutoValue
-public abstract class AccountTransaction {
-    /**
-     * Creates new debit transaction.
-     *
-     * @param paymentId payment id
-     * @param transactionId transaction id
-     * @param account account that transaction is posted for
-     * @param counterPartyAccount counter party account
-     * @param amount transaction amount
-     * @param currency transaction currency
-     * @return newly created transaction
-     */
-    static AccountTransaction debit(
+public final class AccountTransaction {
+    private final TransactionType type;
+    private final String id;
+    private final String referenceId;
+    private final BankAccount from;
+    private final BankAccount to;
+    private final double amount;
+    private final String currency;
+    private final String description;
+    private TransactionStatus status;
+
+    public static Builder builder(TransactionType type) {
+        return new Builder(type);
+    }
+
+    private AccountTransaction(
+            TransactionType type,
             String paymentId,
-            String transactionId,
-            BankAccount account,
-            BankAccount counterPartyAccount,
+            String referenceId,
+            BankAccount from,
+            BankAccount to,
             double amount,
-            String currency) {
-        return new AutoValue_AccountTransaction(
-                paymentId,
-                transactionId,
-                account,
-                counterPartyAccount,
-                - amount,
-                currency);
+            String currency,
+            String description) {
+        this.type = type;
+        this.id = paymentId;
+        this.referenceId = referenceId;
+        this.from = from;
+        this.to = to;
+        this.amount = amount;
+        this.currency = currency;
+        this.description = description;
+        this.status = TransactionStatus.PROCESSING;
+    }
+
+    public TransactionType getType() {
+        return type;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getReferenceId() {
+        return referenceId;
+    }
+
+    public BankAccount getFrom() {
+        return from;
+    }
+
+    public BankAccount getTo() {
+        return to;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 
     /**
-     * Creates new credit transaction.
+     * Converts this object to the transaction as defined by the integration
+     * API.
      *
-     * @param paymentId payment id
-     * @param transactionId transaction id
-     * @param account account that transaction is posted for
-     * @param counterPartyAccount counter party account
-     * @param amount transaction amount
-     * @param currency transaction currency
-     * @return newly created transaction
+     * @return transaction
      */
-    static AccountTransaction credit(
-            String paymentId,
-            String transactionId,
-            BankAccount account,
-            BankAccount counterPartyAccount,
-            double amount,
-            String currency) {
-        return new AutoValue_AccountTransaction(
-                paymentId,
-                transactionId,
-                account,
-                counterPartyAccount,
-                + amount,
-                currency);
+    public TransactionProtos.Transaction toTransaction() {
+        return TransactionProtos.Transaction.newBuilder()
+                .setId(id)
+                .setTokenTransferId(getReferenceId())
+                .setType(getType())
+                .setStatus(status)
+                .setDescription(description)
+                .setAmount(MoneyProtos.Money.newBuilder()
+                        .setValue(Double.toString(getAmount()))
+                        .setCurrency(getCurrency())
+                        .build())
+                .build();
     }
 
-    /**
-     * Returns unique payment id.
-     *
-     * @return payment id
-     */
-    public abstract String getPaymentId();
+    public static final class Builder {
+        private final TransactionType type;
+        private String id;
+        private String referenceId;
+        private BankAccount from;
+        private BankAccount to;
+        private double amount;
+        private String currency;
+        private String description;
 
-    /**
-     * Returns unique transaction id.
-     *
-     * @return transaction id
-     */
-    public abstract String getTransactionId();
+        private Builder(TransactionType type) {
+            this.type = type;
+            this.description = "";
+        }
 
-    /**
-     * Returns transaction account.
-     *
-     * @return transaction account
-     */
-    public abstract BankAccount getAccount();
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
 
-    /**
-     * Returns transaction counterparty account.
-     *
-     * @return transaction counterparty account
-     */
-    public abstract BankAccount getCounterPartyAccount();
+        public Builder referenceId(String referenceId) {
+            this.referenceId = referenceId;
+            return this;
+        }
 
-    /**
-     * Returns transaction amount.
-     *
-     * @return transaction amount
-     */
-    public abstract double getAmount();
+        public Builder from(BankAccount account) {
+            this.from = account;
+            return this;
+        }
 
-    /**
-     * Returns transaction currency.
-     *
-     * @return transaction currency
-     */
-    public abstract String getCurrency();
+        public Builder to(BankAccount account) {
+            this.to = account;
+            return this;
+        }
+
+        public Builder withAmount(double amount, String currency) {
+            this.amount = amount;
+            this.currency = currency;
+            return this;
+        }
+
+        public Builder withDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public AccountTransaction build() {
+            checkArgument(amount > 0, "Amount must be set");
+            return new AccountTransaction(
+                    type,
+                    checkNotNull(id, "AccountTransaction id must be set"),
+                    checkNotNull(referenceId, "AccountTransaction reference id must be set"),
+                    checkNotNull(from, "'From' account must be set"),
+                    checkNotNull(to, "'To' account must be set"),
+                    amount,
+                    checkNotNull(currency, "Currency must be set"),
+                    description);
+        }
+    }
 }

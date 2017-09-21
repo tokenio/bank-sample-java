@@ -2,8 +2,9 @@ package io.token.banksample.model.impl;
 
 import static java.lang.Math.min;
 
-import io.token.banksample.model.Payment;
+import io.token.banksample.model.AccountTransaction;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,22 +18,24 @@ import java.util.Optional;
  * TODO: Do we still need transactions here?
  */
 final class AccountLedger {
-    private final List<Payment> payments;
-    private final Map<String, Payment> paymentsById;
+    private final List<AccountTransaction> payments;
+    private final Map<String, AccountTransaction> paymentsById;
+    private final List<AccountLedgerEntry> ledger;
 
     AccountLedger() {
         this.payments = new LinkedList<>();
         this.paymentsById = new HashMap<>();
+        this.ledger = new ArrayList<>();
     }
 
     /**
-     * Adds new payment to the ledger.
+     * Adds new transaction to the ledger.
      *
-     * @param payment payment to add
+     * @param transaction transaction to add
      */
-    void createPayment(Payment payment) {
-        payments.add(0, payment);
-        paymentsById.put(payment.getId(), payment);
+    void createPayment(AccountTransaction transaction) {
+        payments.add(0, transaction);
+        paymentsById.put(transaction.getId(), transaction);
     }
 
     /**
@@ -41,7 +44,7 @@ final class AccountLedger {
      * @param paymentId payment id
      */
     void deletePayment(String paymentId) {
-        Payment deleted = paymentsById.remove(paymentId);
+        AccountTransaction deleted = paymentsById.remove(paymentId);
         payments.remove(deleted);
     }
 
@@ -51,7 +54,7 @@ final class AccountLedger {
      * @param id payment ID
      * @return looked up payment
      */
-    Optional<Payment> lookupPayment(String id) {
+    Optional<AccountTransaction> lookupPayment(String id) {
         return Optional.ofNullable(paymentsById.get(id));
     }
 
@@ -62,7 +65,16 @@ final class AccountLedger {
      * @param limit max number of payments to lookup
      * @return list of payments
      */
-    List<Payment> lookupPayments(int offset, int limit) {
+    List<AccountTransaction> lookupPayments(int offset, int limit) {
         return payments.subList(offset, min(offset + limit, payments.size()));
+    }
+
+    /**
+     * Posts transaction to the ledger.
+     *
+     * @param transaction transaction to post
+     */
+    void post(AccountLedgerEntry transaction) {
+        ledger.add(transaction);
     }
 }

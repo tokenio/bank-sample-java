@@ -28,7 +28,6 @@ import java.util.List;
  * exposed by the gRPC server.
  */
 final class Factory {
-    private final Configuration config;
     private final Accounting accounting;
     private final Pricing pricing;
 
@@ -39,7 +38,7 @@ final class Factory {
      */
     Factory(String configFilePath) {
         File configFile = new File(configFilePath);
-        this.config = new Configuration(ConfigFactory.parseFile(configFile));
+        Configuration config = new Configuration(ConfigFactory.parseFile(configFile));
 
         List<Account> accounts = config.accounts();
         List<Account> holdAccounts = accounts.stream()
@@ -101,7 +100,7 @@ final class Factory {
     /**
      * Creates new {@link InstantTransferService} instance.
      *
-     * @return new instant transfer service instance
+     * @return new instant updatePayment service instance
      */
     InstantTransferService instantTransferService() {
         return new InstantTransferServiceImpl(accounting, pricing);
@@ -110,7 +109,7 @@ final class Factory {
     /**
      * Creates new {@link TransferService} instance.
      *
-     * @return new transfer service instance
+     * @return new updatePayment service instance
      */
     TransferService transferService() {
         return new TransferServiceImpl(accounting);
