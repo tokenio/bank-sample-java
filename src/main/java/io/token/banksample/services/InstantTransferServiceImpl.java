@@ -1,17 +1,13 @@
-package io.token.banksample.impl;
+package io.token.banksample.services;
 
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_CANCELED;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INVALID_CURRENCY;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.SUCCESS;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 import static io.token.sdk.util.ProtoFactory.newMoney;
 
-import io.token.banksample.config.Account;
+import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
-import io.token.banksample.model.AccountTransfer;
 import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Pricing;
 import io.token.proto.common.account.AccountProtos.BankAccount;
@@ -21,8 +17,6 @@ import io.token.sdk.api.InstantTransfer;
 import io.token.sdk.api.PrepareTransferException;
 import io.token.sdk.api.TransferException;
 import io.token.sdk.api.service.InstantTransferService;
-
-import java.util.UUID;
 
 /**
  * Sample implementation of the {@link InstantTransferService}. Returns fake
@@ -49,69 +43,29 @@ public class InstantTransferServiceImpl implements InstantTransferService {
      */
     @Override
     public InstantTransaction beginDebitTransaction(InstantTransfer transfer) {
-        Account account = accounts
-                .lookupAccount(transfer.getAccount())
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                        "Account not found: " + transfer.getAccount()));
+        pricing.redeemQuote(transfer.getPricing().getSourceQuote());
 
+        // TODO: Make this idempotent.
+        // TODO: We should still try to do FX if needed and there is no quote.
+        // Request a quote on the fly.
         AccountTransaction transaction = AccountTransaction.builder(DEBIT)
-                .id(UUID.randomUUID().toString())
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getCounterpartyAccount().getAccount())
                 .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
+                .transferAmount(
+                        transfer.getPricing().getSourceQuote(),
+                        transfer.getSettlementAmount().doubleValue(),
+                        transfer.getSettlementAmountCurrency())
                 .description(transfer.getDescription())
                 .build();
-        accounts.createPayment(transaction);
+        accounts.createDebitTransaction(transaction);
 
-        if (account.matches(accounts.getRejectAccount(transfer.getTransactionAmountCurrency()))) {
-            transaction.setStatus(FAILURE_CANCELED);
-        } else if (!transfer.getPricing().hasSourceQuote()) {
-            // If FX is not needed, just move the money to the holding account.
-            accounts.post(AccountTransfer.builder()
-                    .transferId(transfer.getTokenTransferId())
-                    .from(transfer.getAccount())
-                    .to(accounts.getHoldAccount(transfer.getTransactionAmountCurrency()))
-                    .withAmount(
-                            transfer.getTransactionAmount().doubleValue(),
-                            transfer.getTransactionAmountCurrency())
-                    .build());
-        } else {
-            // Create two transfers to account for FX.
-            // 1) DB customer, credit FX in the customer account currency.
-            // 2) DB FX, credit hold account in the settlement account currency.
-            // Note that we are not accounting for  the spread with this
-            // transaction pair, it goes 'nowhere'.
-            pricing.redeemQuote(transfer.getPricing().getSourceQuote());
-            accounts.post(
-                    AccountTransfer.builder()
-                            .transferId(transfer.getTokenTransferId())
-                            .from(transfer.getAccount())
-                            .to(accounts.getFxAccount(transfer.getTransactionAmountCurrency()))
-                            .withAmount(
-                                    transfer.getTransactionAmount().doubleValue(),
-                                    transfer.getTransactionAmountCurrency())
-                            .build(),
-                    AccountTransfer.builder()
-                            .transferId(transfer.getTokenTransferId())
-                            .from(accounts.getFxAccount(transfer.getSettlementAmountCurrency()))
-                            .to(accounts.getHoldAccount(transfer.getSettlementAmountCurrency()))
-                            .withAmount(
-                                    transfer.getSettlementAmount().doubleValue(),
-                                    transfer.getSettlementAmountCurrency())
-                            .build());
-        }
-
-        // Return first transaction id back so that we can find the hold transaction
-        // later during commit / rollback.
         return InstantTransaction.builder(transaction.getId())
                 .amount(newMoney(
-                        transfer.getTransactionAmount(),
-                        transfer.getTransactionAmountCurrency()))
-                .settlementAccount(accounts.getSettlementAccount(
+                        transfer.getSettlementAmount(),
                         transfer.getSettlementAmountCurrency()))
                 .build();
     }
@@ -128,14 +82,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             String transactionId,
             BankAccount account,
             Money amount) {
-        AccountTransaction transaction = accounts.lookupPayment(account, transactionId);
-        transaction.setStatus(SUCCESS);
-        accounts.post(AccountTransfer.builder()
-                .transferId(transferId)
-                .from(transaction.getTo())
-                .to(accounts.getSettlementAccount(transaction.getCurrency()))
-                .withAmount(transaction.getAmount(), transaction.getCurrency())
-                .build());
+        accounts.commitDebitTransaction(account, transferId, transactionId);
     }
 
     /**
@@ -149,14 +96,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             String transactionId,
             BankAccount account,
             Money amount) {
-        AccountTransaction transaction = accounts.lookupPayment(account, transactionId);
-        transaction.setStatus(FAILURE_CANCELED);
-        accounts.post(AccountTransfer.builder()
-                .transferId(transferId)
-                .from(transaction.getTo())
-                .to(transaction.getFrom())
-                .withAmount(transaction.getAmount(), transaction.getCurrency())
-                .build());
+        accounts.rollbackDebitTransaction(account, transferId, transactionId);
     }
 
     /**
@@ -173,7 +113,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
      */
     @Override
     public InstantTransaction beginCreditTransaction(InstantTransfer transfer) {
-        Account account = accounts
+        AccountConfig account = accounts
                 .lookupAccount(transfer.getAccount())
                 .orElseThrow(() -> new PrepareTransferException(
                     FAILURE_DESTINATION_ACCOUNT_NOT_FOUND,
@@ -188,29 +128,24 @@ public class InstantTransferServiceImpl implements InstantTransferService {
                     "Credit side FX is not supported");
         }
 
-        if (account.matches(accounts.getRejectAccount(transfer.getTransactionAmountCurrency()))) {
-            throw new TransferException(
-                    FAILURE_CANCELED,
-                    "Reject account - cancelled");
-        }
-
         AccountTransaction transaction = AccountTransaction.builder(CREDIT)
-                .id(UUID.randomUUID().toString())
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getCounterpartyAccount().getAccount())
                 .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
+                .transferAmount(
+                        transfer.getPricing().getDestinationQuote(),
+                        transfer.getSettlementAmount().doubleValue(),
+                        transfer.getSettlementAmountCurrency())
                 .description(transfer.getDescription())
                 .build();
-        accounts.createPayment(transaction);
+        accounts.createCreditTransaction(transaction);
 
         return InstantTransaction.builder(transaction.getId())
                 .amount(newMoney(
-                        transfer.getTransactionAmount(),
-                        transfer.getTransactionAmountCurrency()))
-                .settlementAccount(accounts.getSettlementAccount(
+                        transfer.getSettlementAmount(),
                         transfer.getSettlementAmountCurrency()))
                 .build();
     }
@@ -228,14 +163,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             String transactionId,
             BankAccount account,
             Money amount) {
-        AccountTransaction transaction = accounts.lookupPayment(account, transactionId);
-        transaction.setStatus(SUCCESS);
-        accounts.post(AccountTransfer.builder()
-                .transferId(transferId)
-                .from(accounts.getSettlementAccount(amount.getCurrency()))
-                .to(account)
-                .withAmount(amount)
-                .build());
+        accounts.commitCreditTransaction(account, transferId, transactionId);
     }
 
     /**
@@ -250,6 +178,6 @@ public class InstantTransferServiceImpl implements InstantTransferService {
             String transactionId,
             BankAccount account,
             Money amount) {
-        accounts.deletePayment(account, transactionId);
+        accounts.rollbackCreditTransaction(account, transferId, transactionId);
     }
 }

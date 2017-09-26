@@ -1,4 +1,4 @@
-package io.token.banksample.impl;
+package io.token.banksample.services;
 
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INSUFFICIENT_FUNDS;
@@ -45,17 +45,16 @@ public class PricingServiceImpl implements PricingService {
             String currency,
             BankAccount source,
             TransferEndpoint destination,
-            TransferQuote counterpartyQuote,
+            TransferQuote counterpartyQuote,       // TODO: Remove this? Just remove?
             PurposeOfPayment paymentPurpose,
-            Optional<TransferQuote> debitQuote) {
-        Optional<Balance> balance = accounts.lookupBalance(source);
-        if (!balance.isPresent()) {
-            throw new PrepareTransferException(
+            Optional<TransferQuote> debitQuote) {  // TODO: Remove this? Skip prepareDebit?
+        Balance balance = accounts
+                .lookupBalance(source)
+                .orElseThrow(() -> new PrepareTransferException(
                     FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                    "Account not found: " + destination);
-        }
+                    "Account not found: " + destination));
 
-        if (balance.get().getAvailable().compareTo(amount) < 0) {
+        if (balance.getAvailable().compareTo(amount) < 0) {
             throw new PrepareTransferException(
                     FAILURE_INSUFFICIENT_FUNDS,
                     "Balance exceeded");
@@ -67,9 +66,10 @@ public class PricingServiceImpl implements PricingService {
         return debitQuote
                 .map(quote -> pricing.lookupQuote(quote.getId()))
                 .orElseGet(() -> pricing.debitQuote(
-                        balance.get().getCurrency(),
+                        balance.getCurrency(),
                         targetCurrency));
     }
+
     /**
      * Preparing the credit on the beneficiary side. We don't support
      * beneficiary side FX yet, so we return an empty quote after
@@ -85,7 +85,7 @@ public class PricingServiceImpl implements PricingService {
             TransferEndpoint source,
             TransferEndpoint destination,
             PurposeOfPayment paymentPurpose,
-            Optional<TransferQuote> creditQuote) {
+            Optional<TransferQuote> creditQuote) {   // TODO: Similar to debit, remove?
         Balance balance = accounts
                 .lookupBalance(destination.getAccount())
                 .orElseThrow(() -> new PrepareTransferException(

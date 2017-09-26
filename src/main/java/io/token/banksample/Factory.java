@@ -3,16 +3,18 @@ package io.token.banksample;
 import static java.util.stream.Collectors.toList;
 
 import com.typesafe.config.ConfigFactory;
-import io.token.banksample.config.Account;
-import io.token.banksample.config.Configuration;
-import io.token.banksample.impl.AccountServiceImpl;
-import io.token.banksample.impl.InstantTransferServiceImpl;
-import io.token.banksample.impl.PricingServiceImpl;
-import io.token.banksample.impl.StorageServiceImpl;
-import io.token.banksample.impl.TransferServiceImpl;
+import io.token.banksample.config.AccountConfig;
+import io.token.banksample.config.ConfigParser;
+import io.token.banksample.services.AccountServiceImpl;
+import io.token.banksample.services.InstantTransferServiceImpl;
+import io.token.banksample.services.PricingServiceImpl;
+import io.token.banksample.services.StorageServiceImpl;
+import io.token.banksample.services.TransferServiceImpl;
 import io.token.banksample.model.Accounting;
+import io.token.banksample.model.Accounts;
 import io.token.banksample.model.Pricing;
 import io.token.banksample.model.impl.AccountingImpl;
+import io.token.banksample.model.impl.AccountsImpl;
 import io.token.banksample.model.impl.PricingImpl;
 import io.token.sdk.api.service.AccountService;
 import io.token.sdk.api.service.InstantTransferService;
@@ -38,32 +40,33 @@ final class Factory {
      */
     Factory(String configFilePath) {
         File configFile = new File(configFilePath);
-        Configuration config = new Configuration(ConfigFactory.parseFile(configFile));
+        ConfigParser config = new ConfigParser(ConfigFactory.parseFile(configFile));
 
-        List<Account> accounts = config.accounts();
-        List<String> currencies = accounts.stream()
+        List<String> currencies = config.customerAccounts().stream()
                 .map(a -> a.getBalance().getCurrency())
                 .distinct()
                 .collect(toList());
 
-        List<Account> holdAccounts = currencies.stream()
+        List<AccountConfig> holdAccounts = currencies.stream()
                 .map(config::holdAccountFor)
                 .collect(toList());
-        List<Account> settlementAccounts = currencies.stream()
+        List<AccountConfig> settlementAccounts = currencies.stream()
                 .map(config::settlementAccountFor)
                 .collect(toList());
-        List<Account> fxAccounts = currencies.stream()
+        List<AccountConfig> fxAccounts = currencies.stream()
                 .map(config::fxAccountFor)
                 .collect(toList());
-        List<Account> rejectAccounts = currencies.stream()
+        List<AccountConfig> rejectAccounts = currencies.stream()
                 .map(config::rejectAccountFor)
                 .collect(toList());
-        this.accounting = new AccountingImpl(
+
+        Accounts accounts = new AccountsImpl(
                 holdAccounts,
                 settlementAccounts,
                 fxAccounts,
                 rejectAccounts,
-                accounts);
+                config.customerAccounts());
+        this.accounting = new AccountingImpl(accounts);
         this.pricing = new PricingImpl(config.fxRates());
     }
 

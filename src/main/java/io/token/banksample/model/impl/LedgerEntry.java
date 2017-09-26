@@ -1,23 +1,23 @@
 package io.token.banksample.model.impl;
 
 import com.google.auto.value.AutoValue;
-import io.token.banksample.model.AccountTransfer;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 
 /**
- * Represents a ledger entry posted to the source and destination accounts.
- * The change credits one account and debits the other.
+ * Represents an account journal entry posted to the source and
+ * destination accounts. The change credits one account and debits
+ * the other.
  */
 @AutoValue
-public abstract class AccountLedgerEntry {
+public abstract class LedgerEntry {
     /**
-     * Creates new debit ledger entry.
+     * Creates new debit journal entry.
      *
      * @param transfer to extract the transaction information from
      * @return newly created transaction
      */
-    static AccountLedgerEntry debit(AccountTransfer transfer) {
-        return new AutoValue_AccountLedgerEntry(
+    static LedgerEntry debit(AccountTransfer transfer) {
+        return new AutoValue_LedgerEntry(
                 transfer.getTransferId() + ":debit",
                     transfer.getTransferId(),
                     transfer.getFrom(),
@@ -27,13 +27,13 @@ public abstract class AccountLedgerEntry {
     }
 
     /**
-     * Creates new credit ledger entry.
+     * Creates new credit journal entry.
      *
      * @param transfer to extract the transaction information from
      * @return newly created transaction
      */
-    static AccountLedgerEntry credit(AccountTransfer transfer) {
-        return new AutoValue_AccountLedgerEntry(
+    static LedgerEntry credit(AccountTransfer transfer) {
+        return new AutoValue_LedgerEntry(
                 transfer.getTransferId() + ":credit",
                 transfer.getTransferId(),
                 transfer.getFrom(),
@@ -43,18 +43,18 @@ public abstract class AccountLedgerEntry {
     }
 
     /**
-     * Returns unique ledger entry id.
+     * Returns unique journal entry id.
      *
-     * @return ledger entry id
+     * @return journal entry id
      */
     public abstract String getId();
 
     /**
-     * Returns unique payment id that the entry ties to.
+     * Returns unique transaction id that the entry ties to.
      *
-     * @return payment id
+     * @return transaction id
      */
-    public abstract String getPaymentId();
+    public abstract String getTransactionId();
 
     /**
      * Returns account.

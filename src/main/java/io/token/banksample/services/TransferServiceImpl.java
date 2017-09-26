@@ -1,4 +1,4 @@
-package io.token.banksample.impl;
+package io.token.banksample.services;
 
 import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INSUFFICIENT_FUNDS;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_GENERIC;
@@ -12,8 +12,6 @@ import io.token.sdk.api.PrepareTransferException;
 import io.token.sdk.api.Transfer;
 import io.token.sdk.api.TransferException;
 import io.token.sdk.api.service.TransferService;
-
-import java.util.UUID;
 
 /**
  * Sample implementation of the {@link TransferService}. Returns fake data.
@@ -39,17 +37,26 @@ public class TransferServiceImpl implements TransferService {
                     "Balance exceeded");
         }
 
+        // TODO: Fail this if currency doesn't match the account.
+        // And say that we don't support FX here.
+        // TODO: Make this idempotent.
         AccountTransaction transaction = AccountTransaction.builder(DEBIT)
-                .id(UUID.randomUUID().toString())
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getDestinations().get(0).getAccount())
                 .amount(
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
+                .transferAmount(
+                        transfer.getQuote(),
+                        transfer.getTransactionAmount().doubleValue(),
+                        transfer.getTransactionAmountCurrency())
                 .description(transfer.getDescription())
                 .build();
-        accounts.createPayment(transaction);
+        accounts.createDebitTransaction(transaction);
+
+        // TODO: Not sure what would normally happen here.
+
         return transaction.toTransaction();
     }
 }

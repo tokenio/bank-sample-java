@@ -5,9 +5,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.money.MoneyProtos;
+import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transaction.TransactionProtos.TransactionStatus;
 import io.token.proto.common.transaction.TransactionProtos.TransactionType;
+
+import java.util.UUID;
 
 /**
  * Represents an account transaction. The transaction captures from, to, amount
@@ -21,6 +24,9 @@ public final class AccountTransaction {
     private final BankAccount to;
     private final double amount;
     private final String currency;
+    private final TransferQuote transferQuote;
+    private final double transferAmount;
+    private final String transferCurrency;
     private final String description;
     private volatile TransactionStatus status;
 
@@ -43,8 +49,12 @@ public final class AccountTransaction {
      *      transaction identifier
      * @param from from / remitter account
      * @param to to / beneficiary account
-     * @param amount transaction amount
+     * @param amount transaction amount, as posted to the customer account
      * @param currency transaction currency
+     * @param transferQuote transfer pricing quote
+     * @param transferAmount transfer amount, could be different from customer
+     *      amount if FX is involved
+     * @param transferCurrency transfer currency
      * @param description transaction description
      */
     private AccountTransaction(
@@ -55,6 +65,9 @@ public final class AccountTransaction {
             BankAccount to,
             double amount,
             String currency,
+            TransferQuote transferQuote,
+            double transferAmount,
+            String transferCurrency,
             String description) {
         this.type = type;
         this.id = id;
@@ -63,6 +76,9 @@ public final class AccountTransaction {
         this.to = to;
         this.amount = amount;
         this.currency = currency;
+        this.transferQuote = transferQuote;
+        this.transferAmount = transferAmount;
+        this.transferCurrency = transferCurrency;
         this.description = description;
         this.status = TransactionStatus.PROCESSING;
     }
@@ -131,6 +147,35 @@ public final class AccountTransaction {
     }
 
     /**
+     * Returns transfer pricing quote.
+     *
+     * @return transfer pricing quote
+     */
+    public TransferQuote getTransferQuote() {
+        return transferQuote;
+    }
+
+    /**
+     * Returns transfer amount. Could be different from the transaction
+     * amount if Fx is involved.
+     *
+     * @return transfer amount
+     */
+    public double getTransferAmount() {
+        return transferAmount;
+    }
+
+    /**
+     * Returns transfer currency. Could be different from the transaction
+     * currency if Fx is involved.
+     *
+     * @return transfer currency
+     */
+    public String getTransferCurrency() {
+        return transferCurrency;
+    }
+
+    /**
      * Sets transaction status.
      *
      * @param status new transaction status
@@ -170,6 +215,9 @@ public final class AccountTransaction {
         private BankAccount to;
         private double amount;
         private String currency;
+        private double transferAmount;
+        private String transferCurrency;
+        private TransferQuote transferQuote;
         private String description;
 
         /**
@@ -180,6 +228,8 @@ public final class AccountTransaction {
         private Builder(TransactionType type) {
             this.type = type;
             this.description = "";
+
+            id(UUID.randomUUID().toString());
         }
 
         /**
@@ -241,6 +291,25 @@ public final class AccountTransaction {
         }
 
         /**
+         * Sets transfer amount. This could be different from transaction amount
+         * if FX is involved
+         *
+         * @param quote price quote
+         * @param amount transfer amount
+         * @param currency transfer currency
+         * @return this builder
+         */
+        public Builder transferAmount(
+                TransferQuote quote,
+                double amount,
+                String currency) {
+            this.transferQuote = quote;
+            this.transferAmount = amount;
+            this.transferCurrency = currency;
+            return this;
+        }
+
+        /**
          * Sets transaction description.
          *
          * @param description transaction description
@@ -259,6 +328,7 @@ public final class AccountTransaction {
          */
         public AccountTransaction build() {
             checkArgument(amount > 0, "Amount must be set");
+            checkArgument(transferAmount > 0, "Transfer amount must be set");
             return new AccountTransaction(
                     type,
                     checkNotNull(id, "AccountTransaction id must be set"),
@@ -267,6 +337,9 @@ public final class AccountTransaction {
                     checkNotNull(to, "'To' account must be set"),
                     amount,
                     checkNotNull(currency, "Currency must be set"),
+                    checkNotNull(transferQuote, "Transfer quote must be set"),
+                    transferAmount,
+                    checkNotNull(transferCurrency, "Transfer currency must be set"),
                     description);
         }
     }

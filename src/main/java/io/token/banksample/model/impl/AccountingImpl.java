@@ -1,17 +1,20 @@
 package io.token.banksample.model.impl;
 
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_CANCELED;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.SUCCESS;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 import static java.util.stream.Collectors.toMap;
 
-import io.token.banksample.config.Account;
+import com.google.common.base.Preconditions;
+import io.grpc.Status;
+import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
-import io.token.banksample.model.AccountTransfer;
 import io.token.banksample.model.Accounting;
+import io.token.banksample.model.Accounts;
 import io.token.proto.common.account.AccountProtos.BankAccount;
-import io.token.sdk.api.PrepareTransferException;
+import io.token.sdk.api.TransferException;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,148 +25,170 @@ import java.util.Optional;
  * TODO: Account limits are not enforced at this point
  */
 public final class AccountingImpl implements Accounting {
-    private final Map<String, Account> holdAccounts;
-    private final Map<String, Account> settlementAccounts;
-    private final Map<String, Account> fxAccounts;
-    private final Map<String, Account> rejectAccounts;
-    private final Map<Account, AccountLedger> accounts;
+    private final Accounts config;
+    private final Map<AccountConfig, Account> accounts;
+    private final AccountingLedger ledger;
 
-    public AccountingImpl(
-            Collection<Account> holdAccounts,
-            Collection<Account> settlementAccounts,
-            Collection<Account> fxAccounts,
-            Collection<Account> rejectAccounts,
-            Collection<Account> customerAccounts) {
-        this.holdAccounts = indexAccounts(holdAccounts);
-        this.settlementAccounts = indexAccounts(settlementAccounts);
-        this.fxAccounts = indexAccounts(fxAccounts);
-        this.rejectAccounts = indexAccounts(rejectAccounts);
-        this.accounts =
-                new ArrayList<Account>() {{
-                    addAll(holdAccounts);
-                    addAll(settlementAccounts);
-                    addAll(fxAccounts);
-                    addAll(customerAccounts);
-                    addAll(rejectAccounts);
-                }}
-                        .stream()
-                        .collect(toMap(
-                                a -> a,
-                                a -> new AccountLedger()));
+    public AccountingImpl(Accounts config) {
+        this.config = config;
+        this.accounts = config.getAllAccounts()
+                .stream()
+                .collect(toMap(
+                        a -> a,
+                        a -> new Account()));
+        this.ledger = new AccountingLedger();
     }
 
     @Override
-    public synchronized BankAccount getHoldAccount(String currency) {
-        return Optional
-                .ofNullable(holdAccounts.get(currency))
-                .map(Account::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                        "Hold account is not found for: " + currency));
+    public synchronized Optional<AccountConfig> lookupAccount(BankAccount account) {
+        return config.tryLookupAccount(account);
     }
 
     @Override
-    public synchronized BankAccount getSettlementAccount(String currency) {
-        return Optional
-                .ofNullable(settlementAccounts.get(currency))
-                .map(Account::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                        "Settlement account is not found for: " + currency));
+    public synchronized void createDebitTransaction(AccountTransaction transaction) {
+        Preconditions.checkArgument(transaction.getType() == DEBIT);
+        createTransaction(transaction);
+
+        if (transaction.getCurrency().equals(transaction.getTransferCurrency())) {
+            // If FX is not needed, just move the money to the holding account.
+            ledger.post(AccountTransfer.builder()
+                    .from(transaction.getFrom())
+                    .to(config.getHoldAccount(transaction.getCurrency()))
+                    .withAmount(
+                            transaction.getAmount(),
+                            transaction.getCurrency())
+                    .build());
+        } else {
+            // With FX.
+            // Create two transfers to account for FX.
+            // 1) DB customer, credit FX in the customer account currency.
+            // 2) DB FX, credit hold account in the settlement account currency.
+            // Note that we are not accounting for  the spread with this
+            // transaction pair, it goes 'nowhere'.
+            ledger.post(
+                    AccountTransfer.builder()
+                            .from(transaction.getFrom())
+                            .to(config.getFxAccount(transaction.getCurrency()))
+                            .withAmount(
+                                    transaction.getAmount(),
+                                    transaction.getCurrency())
+                            .build(),
+                    AccountTransfer.builder()
+                            .from(config.getFxAccount(transaction.getTransferCurrency()))
+                            .to(config.getHoldAccount(transaction.getTransferCurrency()))
+                            .withAmount(
+                                    transaction.getTransferAmount(),
+                                    transaction.getTransferCurrency())
+                            .build());
+        }
     }
 
     @Override
-    public synchronized BankAccount getFxAccount(String currency) {
-        return Optional
-                .ofNullable(fxAccounts.get(currency))
-                .map(Account::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                        "FX account is not found for: " + currency));
+    public synchronized void createCreditTransaction(AccountTransaction transaction) {
+        Preconditions.checkArgument(transaction.getType() == CREDIT);
+        createTransaction(transaction);
     }
 
     @Override
-    public synchronized BankAccount getRejectAccount(String currency) {
-        return Optional
-                .ofNullable(rejectAccounts.get(currency))
-                .map(Account::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                        "Reject account is not found for: " + currency));
-    }
-
-    @Override
-    public synchronized Optional<Account> lookupAccount(BankAccount account) {
-        return toSwiftAccount(account)
-                .flatMap(swift -> accounts.keySet().stream()
-                        .filter(a -> a.getBic().equals(swift.getBic()))
-                        .filter(a -> a.getNumber().equals(swift.getAccount()))
-                        .findFirst());
-    }
-
-    @Override
-    public synchronized void createPayment(AccountTransaction transaction) {
-        Account account = lookupAccountOrThrow(transaction.getFrom());
-        AccountLedger ledger = accounts.get(account);
-        ledger.createPayment(transaction);
-    }
-
-    @Override
-    public synchronized Optional<AccountTransaction> tryLookupPayment(
+    public synchronized void commitDebitTransaction(
             BankAccount account,
-            String paymentId) {
-        return accounts
-                .get(lookupAccountOrThrow(account))
-                .lookupPayment(paymentId);
+            String transferId,
+            String transactionId) {
+        AccountTransaction transaction = lookupTransactionOrThrow(account, transactionId);
+        transaction.setStatus(SUCCESS);
+        ledger.post(AccountTransfer.builder()
+                .transferId(transferId)
+                .from(transaction.getTo())
+                .to(config.getSettlementAccount(transaction.getCurrency()))
+                .withAmount(transaction.getAmount(), transaction.getCurrency())
+                .build());
     }
 
     @Override
-    public synchronized List<AccountTransaction> lookupPayments(
+    public synchronized void commitCreditTransaction(
+            BankAccount account,
+            String transferId,
+            String transactionId) {
+        AccountTransaction transaction = lookupTransactionOrThrow(account, transactionId);
+        transaction.setStatus(SUCCESS);
+        ledger.post(AccountTransfer.builder()
+                .transferId(transferId)
+                .from(config.getSettlementAccount(transaction.getCurrency()))
+                .to(account)
+                .withAmount(transaction.getAmount(), transaction.getCurrency())
+                .build());
+    }
+
+    @Override
+    public synchronized void rollbackDebitTransaction(
+            BankAccount account,
+            String transferId,
+            String transactionId) {
+        lookupTransaction(account, transactionId)
+                .ifPresent(transaction -> {
+                    transaction.setStatus(FAILURE_CANCELED);
+                    ledger.post(AccountTransfer.builder()
+                            .transferId(transferId)
+                            .from(transaction.getTo())
+                            .to(transaction.getFrom())
+                            .withAmount(transaction.getAmount(), transaction.getCurrency())
+                            .build());
+                });
+    }
+
+    @Override
+    public synchronized void rollbackCreditTransaction(
+            BankAccount account,
+            String transferId,
+            String transactionId) {
+        lookupTransaction(account, transactionId)
+                .ifPresent(transaction -> transaction.setStatus(FAILURE_CANCELED));
+    }
+
+    @Override
+    public synchronized Optional<AccountTransaction> lookupTransaction(
+            BankAccount account,
+            String transactionId) {
+        return config
+                .tryLookupAccount(account)
+                .flatMap(a -> accounts
+                        .getOrDefault(a, new Account())
+                        .lookupTransaction(transactionId));
+    }
+
+    @Override
+    public synchronized List<AccountTransaction> lookupTransactions(
             BankAccount account,
             int offset,
             int limit) {
         return accounts
-                .get(lookupAccountOrThrow(account))
-                .lookupPayments(offset, limit);
+                .getOrDefault(config.lookupAccount(account), new Account())
+                .lookupTransactions(offset, limit);
     }
 
-    @Override
-    public synchronized void deletePayment(BankAccount account, String paymentId) {
+    private void createTransaction(AccountTransaction transaction) {
+        AccountConfig account = config.lookupAccount(transaction.getFrom());
+        if (account.matches(config.getRejectAccount(transaction.getCurrency()))) {
+            throw new TransferException(FAILURE_CANCELED, "Reject account - cancelled");
+        }
         accounts
-                .get(lookupAccountOrThrow(account))
-                .deletePayment(paymentId);
+                .getOrDefault(account, new Account())
+                .createTransaction(transaction);
     }
 
-    @Override
-    public synchronized void post(AccountTransfer... transfers) {
-        for (AccountTransfer transfer : transfers) {
-            AccountLedgerEntry debit = AccountLedgerEntry.debit(transfer);
-            AccountLedgerEntry credit = AccountLedgerEntry.credit(transfer);
-            accounts.get(lookupAccountOrThrow(debit.getAccount())).post(debit);
-            accounts.get(lookupAccountOrThrow(credit.getAccount())).post(credit);
-        }
-    }
-
-    private Account lookupAccountOrThrow(BankAccount account) {
-        return lookupAccount(account)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
-                        "Account not found"));
-    }
-
-    private static Map<String, Account> indexAccounts(Collection<Account> accounts) {
-        return accounts
-                .stream()
-                .collect(toMap(
-                        a -> a.getBalance().getCurrency(),
-                        a -> a));
-    }
-
-    private static Optional<BankAccount.Swift> toSwiftAccount(BankAccount account) {
-        if (account.getAccountCase() != BankAccount.AccountCase.SWIFT) {
-            return Optional.empty();
-        } else {
-            return Optional.of(account.getSwift());
-        }
+    /**
+     * Looks up transaction given the account and transaction ID.
+     *
+     * @param account account to lookup the transaction for
+     * @param transactionId transaction id
+     * @return looked up transaction
+     */
+    private AccountTransaction lookupTransactionOrThrow(BankAccount account, String transactionId) {
+        return this
+                .lookupTransaction(account, transactionId)
+                .orElseThrow(() -> Status
+                        .NOT_FOUND
+                        .withDescription("AccountTransaction not found: " + transactionId)
+                        .asRuntimeException());
     }
 }

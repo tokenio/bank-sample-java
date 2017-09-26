@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Parses configuration file and extracts different pieces of configuration.
  */
-public final class Configuration {
+public final class ConfigParser {
     private final Config config;
 
     /**
@@ -20,7 +20,7 @@ public final class Configuration {
      *
      * @param config config to parse
      */
-    public Configuration(Config config) {
+    public ConfigParser(Config config) {
         this.config = config;
     }
 
@@ -29,12 +29,12 @@ public final class Configuration {
      *
      * @return list of configured accounts
      */
-    public List<Account> accounts() {
+    public List<AccountConfig> customerAccounts() {
         return config.getConfigList("accounts.customers")
                 .stream()
                 .map(c -> {
                     Config address = c.getConfig("address");
-                    return Account.create(
+                    return AccountConfig.create(
                             c.getString("name"),
                             Address.newBuilder()
                                     .setHouseNumber(address.getString("house"))
@@ -57,7 +57,7 @@ public final class Configuration {
      * @param currency currency to extract the hold account for
      * @return hold account for the given currency
      */
-    public Account holdAccountFor(String currency) {
+    public AccountConfig holdAccountFor(String currency) {
         return accountForTemplate("hold", currency);
     }
 
@@ -67,7 +67,7 @@ public final class Configuration {
      * @param currency currency to extract the settlement account for
      * @return settlement account for the given currency
      */
-    public Account settlementAccountFor(String currency) {
+    public AccountConfig settlementAccountFor(String currency) {
         return accountForTemplate("settlement", currency);
     }
 
@@ -77,7 +77,7 @@ public final class Configuration {
      * @param currency currency to extract the FX account for
      * @return FX account for the given currency
      */
-    public Account fxAccountFor(String currency) {
+    public AccountConfig fxAccountFor(String currency) {
         return accountForTemplate("fx", currency);
     }
 
@@ -87,7 +87,7 @@ public final class Configuration {
      * @param currency currency to extract the reject account for
      * @return FX account for the given currency
      */
-    public Account rejectAccountFor(String currency) {
+    public AccountConfig rejectAccountFor(String currency) {
         return accountForTemplate("reject", currency);
     }
 
@@ -115,7 +115,7 @@ public final class Configuration {
                 .collect(toList());
     }
 
-    private Account accountForTemplate(String pattern, String currency) {
+    private AccountConfig accountForTemplate(String pattern, String currency) {
         Config accountConfig = config.getConfig("accounts." + pattern);
 
         String bic = accountConfig.getString("bic");
@@ -123,7 +123,7 @@ public final class Configuration {
         double balance = accountConfig.hasPath("balance")
                 ? accountConfig.getDouble("balance")
                 : 0;
-        return Account.create(
+        return AccountConfig.create(
                 "Reject account - " + currency,
                 Address.getDefaultInstance(),
                 bic,

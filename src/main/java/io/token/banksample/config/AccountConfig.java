@@ -13,7 +13,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
  * A bank account configuration.
  */
 @AutoValue
-public abstract class Account {
+public abstract class AccountConfig {
     /**
      * Creates new bank account data structure.
      *
@@ -25,7 +25,7 @@ public abstract class Account {
      * @param balance account balance
      * @return newly created account
      */
-    static Account create(
+    static AccountConfig create(
             String name,
             Address address,
             String bic,
@@ -53,13 +53,13 @@ public abstract class Account {
      * @param balance account balance
      * @return newly created account
      */
-    private static Account create(
+    private static AccountConfig create(
             String name,
             Address address,
             String bic,
             String number,
             Balance balance) {
-        return new AutoValue_Account(name, address, bic, number, balance);
+        return new AutoValue_AccountConfig(name, address, bic, number, balance);
     }
 
     /**

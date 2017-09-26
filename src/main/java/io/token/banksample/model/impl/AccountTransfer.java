@@ -1,4 +1,4 @@
-package io.token.banksample.model;
+package io.token.banksample.model.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -8,12 +8,14 @@ import com.google.auto.value.AutoValue;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.money.MoneyProtos.Money;
 
+import java.util.UUID;
+
 /**
  * Represents a transaction posted to the source and destination accounts. The
  * change credits one account and debits the other.
  */
 @AutoValue
-public abstract class AccountTransfer {
+abstract class AccountTransfer {
     /**
      * Creates a new {@link Builder} that is used to create
      * {@link AccountTransfer} instances.
@@ -25,35 +27,35 @@ public abstract class AccountTransfer {
     }
 
     /**
-     * Returns updatePayment id.
+     * Returns transfer id.
      *
-     * @return updatePayment id
+     * @return transfer id
      */
     public abstract String getTransferId();
 
     /**
-     * Returns updatePayment source/from account.
+     * Returns transfer source/from account.
      *
      * @return from account
      */
     public abstract BankAccount getFrom();
 
     /**
-     * Returns updatePayment destination/to account.
+     * Returns transfer destination/to account.
      *
      * @return to account
      */
     public abstract BankAccount getTo();
 
     /**
-     * Returns updatePayment amount.
+     * Returns transfer amount.
      *
-     * @return updatePayment amount
+     * @return transfer amount
      */
     public abstract double getAmount();
 
     /**
-     * Returns updatePayment currency.
+     * Returns transfer currency.
      *
      * @return currency
      */
@@ -69,12 +71,14 @@ public abstract class AccountTransfer {
         private double amount;
         private String currency;
 
-        private Builder() {}
+        private Builder() {
+            transferId(UUID.randomUUID().toString());
+        }
 
         /**
-         * Sets unique updatePayment id.
+         * Sets unique transfer id.
          *
-         * @param transferId updatePayment id
+         * @param transferId transfer id
          * @return this object
          */
         public Builder transferId(String transferId) {
@@ -105,10 +109,10 @@ public abstract class AccountTransfer {
         }
 
         /**
-         * Sets updatePayment amount.
+         * Sets transfer amount.
          *
-         * @param amount updatePayment amount
-         * @param currency updatePayment currency
+         * @param amount transfer amount
+         * @param currency transfer currency
          * @return this object
          */
         public Builder withAmount(double amount, String currency) {
@@ -118,9 +122,9 @@ public abstract class AccountTransfer {
         }
 
         /**
-         * Sets updatePayment amount.
+         * Sets transfer amount.
          *
-         * @param amount updatePayment amount
+         * @param amount transfer amount
          * @return this object
          */
         public Builder withAmount(Money amount) {
