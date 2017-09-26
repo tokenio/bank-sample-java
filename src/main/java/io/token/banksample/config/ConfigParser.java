@@ -1,6 +1,5 @@
 package io.token.banksample.config;
 
-import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import com.typesafe.config.Config;
@@ -30,65 +29,43 @@ public final class ConfigParser {
      * @return list of configured accounts
      */
     public List<AccountConfig> customerAccounts() {
-        return config.getConfigList("accounts.customers")
-                .stream()
-                .map(c -> {
-                    Config address = c.getConfig("address");
-                    return AccountConfig.create(
-                            c.getString("name"),
-                            Address.newBuilder()
-                                    .setHouseNumber(address.getString("house"))
-                                    .setStreet(address.getString("street"))
-                                    .setCity(address.getString("city"))
-                                    .setPostCode(address.getString("post_code"))
-                                    .setCountry(address.getString("country"))
-                                    .build(),
-                            c.getString("bic"),
-                            c.getString("number"),
-                            c.getString("currency"),
-                            c.getDouble("balance"));
-                })
-                .collect(toList());
+        return accountsFor("customers");
     }
 
     /**
-     * Extracts hold account info for the given currency.
+     * Extracts hold accounts list.
      *
-     * @param currency currency to extract the hold account for
-     * @return hold account for the given currency
+     * @return hold accounts
      */
-    public AccountConfig holdAccountFor(String currency) {
-        return accountForTemplate("hold", currency);
+    public List<AccountConfig> holdAccounts() {
+        return accountsFor("hold");
     }
 
     /**
-     * Extracts settlement account info for the given currency.
+     * Extracts settlement account list.
      *
-     * @param currency currency to extract the settlement account for
-     * @return settlement account for the given currency
+     * @return settlement accounts
      */
-    public AccountConfig settlementAccountFor(String currency) {
-        return accountForTemplate("settlement", currency);
+    public List<AccountConfig> settlementAccounts() {
+        return accountsFor("settlement");
     }
 
     /**
-     * FX account info for the given currency.
+     * FX accounts account list.
      *
-     * @param currency currency to extract the FX account for
-     * @return FX account for the given currency
+     * @return FX accounts
      */
-    public AccountConfig fxAccountFor(String currency) {
-        return accountForTemplate("fx", currency);
+    public List<AccountConfig> fxAccounts() {
+        return accountsFor("fx");
     }
 
     /**
-     * Reject account info for the given currency.
+     * Reject accounts account list.
      *
-     * @param currency currency to extract the reject account for
-     * @return FX account for the given currency
+     * @return reject accounts
      */
-    public AccountConfig rejectAccountFor(String currency) {
-        return accountForTemplate("reject", currency);
+    public List<AccountConfig> rejectAccounts() {
+        return accountsFor("reject");
     }
 
     /**
@@ -115,20 +92,34 @@ public final class ConfigParser {
                 .collect(toList());
     }
 
-    private AccountConfig accountForTemplate(String pattern, String currency) {
-        Config accountConfig = config.getConfig("accounts." + pattern);
+    private List<AccountConfig> accountsFor(String category) {
+        return config.getConfigList("accounts." + category)
+                .stream()
+                .map(c -> {
+                    Address address = Address.getDefaultInstance();
+                    if (c.hasPath("address")) {
+                        Config addressConfig = c.getConfig("address");
+                        address = Address.newBuilder()
+                                .setHouseNumber(addressConfig.getString("house"))
+                                .setStreet(addressConfig.getString("street"))
+                                .setCity(addressConfig.getString("city"))
+                                .setPostCode(addressConfig.getString("post_code"))
+                                .setCountry(addressConfig.getString("country"))
+                                .build();
+                    }
 
-        String bic = accountConfig.getString("bic");
-        String numberFormat = accountConfig.getString("number_format");
-        double balance = accountConfig.hasPath("balance")
-                ? accountConfig.getDouble("balance")
-                : 0;
-        return AccountConfig.create(
-                "Reject account - " + currency,
-                Address.getDefaultInstance(),
-                bic,
-                format(numberFormat, currency),
-                currency,
-                balance);
+                    double balance = c.hasPath("balance")
+                            ? c.getDouble("balance")
+                            : 0;
+
+                    return AccountConfig.create(
+                            c.getString("name"),
+                            address,
+                            c.getString("bic"),
+                            c.getString("number"),
+                            c.getString("currency"),
+                            balance);
+                })
+                .collect(toList());
     }
 }
