@@ -2,6 +2,7 @@ package io.token.banksample.services;
 
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_GENERIC;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INSUFFICIENT_FUNDS;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INVALID_CURRENCY;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 
 import io.token.banksample.model.AccountTransaction;
@@ -36,8 +37,12 @@ public class TransferServiceImpl implements TransferService {
                     "Balance exceeded");
         }
 
-        // TODO: Fail this if currency doesn't match the account.
-        // And say that we don't support FX here.
+        if (balance.getCurrency().equals(transfer.getRequestedAmountCurrency())) {
+            throw new TransferException(
+                    FAILURE_INVALID_CURRENCY,
+                    "FX is not supported");
+        }
+
         // TODO: Make this idempotent.
         AccountTransaction transaction = AccountTransaction.builder(DEBIT)
                 .referenceId(transfer.getTokenTransferId())
