@@ -1,18 +1,19 @@
 package io.token.banksample.model.impl;
 
+import static io.grpc.Status.NOT_FOUND;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_CANCELED;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.SUCCESS;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Preconditions;
-import io.grpc.Status;
 import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
 import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Accounts;
 import io.token.proto.common.account.AccountProtos.BankAccount;
+import io.token.sdk.api.Balance;
 import io.token.sdk.api.TransferException;
 
 import java.util.List;
@@ -35,13 +36,24 @@ public final class AccountingImpl implements Accounting {
                 .stream()
                 .collect(toMap(
                         a -> a,
-                        a -> new Account()));
+                        a -> new Account(
+                                a.getBalance().getCurrency(),
+                                a.getBalance().getAvailable().doubleValue(),
+                                a.getBalance().getCurrent().doubleValue())));
         this.ledger = new AccountingLedger();
     }
 
     @Override
     public synchronized Optional<AccountConfig> lookupAccount(BankAccount account) {
         return config.tryLookupAccount(account);
+    }
+
+    @Override
+    public Optional<Balance> lookupBalance(BankAccount account) {
+        return config
+                .tryLookupAccount(account)
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .map(Account::getBalance);
     }
 
     @Override
@@ -94,8 +106,11 @@ public final class AccountingImpl implements Accounting {
             BankAccount account,
             String transferId,
             String transactionId) {
-        AccountTransaction transaction = lookupTransactionOrThrow(account, transactionId);
-        transaction.setStatus(SUCCESS);
+        AccountTransaction transaction = config
+                .tryLookupAccount(account)
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .flatMap(a -> a.commitTransaction(transactionId))
+                .orElseThrow(NOT_FOUND::asRuntimeException);
         ledger.post(AccountTransfer.builder()
                 .transferId(transferId)
                 .from(transaction.getTo())
@@ -109,8 +124,11 @@ public final class AccountingImpl implements Accounting {
             BankAccount account,
             String transferId,
             String transactionId) {
-        AccountTransaction transaction = lookupTransactionOrThrow(account, transactionId);
-        transaction.setStatus(SUCCESS);
+        AccountTransaction transaction = config
+                .tryLookupAccount(account)
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .flatMap(a -> a.commitTransaction(transactionId))
+                .orElseThrow(NOT_FOUND::asRuntimeException);
         ledger.post(AccountTransfer.builder()
                 .transferId(transferId)
                 .from(config.getSettlementAccount(transaction.getCurrency()))
@@ -124,7 +142,10 @@ public final class AccountingImpl implements Accounting {
             BankAccount account,
             String transferId,
             String transactionId) {
-        lookupTransaction(account, transactionId)
+        config
+                .tryLookupAccount(account)
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .flatMap(a -> a.rollbackTransaction(transactionId))
                 .ifPresent(transaction -> {
                     transaction.setStatus(FAILURE_CANCELED);
                     ledger.post(AccountTransfer.builder()
@@ -141,8 +162,10 @@ public final class AccountingImpl implements Accounting {
             BankAccount account,
             String transferId,
             String transactionId) {
-        lookupTransaction(account, transactionId)
-                .ifPresent(transaction -> transaction.setStatus(FAILURE_CANCELED));
+        config
+                .tryLookupAccount(account)
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .ifPresent(a -> a.rollbackTransaction(transactionId));
     }
 
     @Override
@@ -151,9 +174,8 @@ public final class AccountingImpl implements Accounting {
             String transactionId) {
         return config
                 .tryLookupAccount(account)
-                .flatMap(a -> accounts
-                        .getOrDefault(a, new Account())
-                        .lookupTransaction(transactionId));
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .flatMap(a -> a.lookupTransaction(transactionId));
     }
 
     @Override
@@ -161,9 +183,11 @@ public final class AccountingImpl implements Accounting {
             BankAccount account,
             int offset,
             int limit) {
-        return accounts
-                .getOrDefault(config.lookupAccount(account), new Account())
-                .lookupTransactions(offset, limit);
+        return Optional
+                .ofNullable(config.lookupAccount(account))
+                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
+                .map(a -> a.lookupTransactions(offset, limit))
+                .orElse(emptyList());
     }
 
     private void createTransaction(AccountTransaction transaction) {
@@ -172,23 +196,7 @@ public final class AccountingImpl implements Accounting {
             throw new TransferException(FAILURE_CANCELED, "Reject account - cancelled");
         }
         accounts
-                .getOrDefault(account, new Account())
+                .get(account)
                 .createTransaction(transaction);
-    }
-
-    /**
-     * Looks up transaction given the account and transaction ID.
-     *
-     * @param account account to lookup the transaction for
-     * @param transactionId transaction id
-     * @return looked up transaction
-     */
-    private AccountTransaction lookupTransactionOrThrow(BankAccount account, String transactionId) {
-        return this
-                .lookupTransaction(account, transactionId)
-                .orElseThrow(() -> Status
-                        .NOT_FOUND
-                        .withDescription("AccountTransaction not found: " + transactionId)
-                        .asRuntimeException());
     }
 }

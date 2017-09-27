@@ -1,9 +1,16 @@
 package io.token.banksample.model.impl;
 
+import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_CANCELED;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INSUFFICIENT_FUNDS;
+import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.SUCCESS;
 import static java.lang.Math.min;
+import static java.math.BigDecimal.ROUND_FLOOR;
 
 import io.token.banksample.model.AccountTransaction;
+import io.token.sdk.api.Balance;
+import io.token.sdk.api.TransferException;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,10 +23,23 @@ import java.util.Optional;
 public class Account {
     private final List<AccountTransaction> transactions;
     private final Map<String, AccountTransaction> transactionsById;
+    private final String currency;
+    private double balanceAvailable;
+    private double balanceCurrent;
 
-    Account() {
+    Account(String currency, double balanceAvailable, double balanceCurrent) {
+        this.currency = currency;
         this.transactions = new LinkedList<>();
         this.transactionsById = new HashMap<>();
+        this.balanceAvailable = balanceAvailable;
+        this.balanceCurrent = balanceCurrent;
+    }
+
+    Balance getBalance() {
+        return Balance.create(
+                currency,
+                BigDecimal.valueOf(balanceAvailable).setScale(2, ROUND_FLOOR),
+                BigDecimal.valueOf(balanceCurrent).setScale(2, ROUND_FLOOR));
     }
 
     /**
@@ -28,8 +48,42 @@ public class Account {
      * @param transaction transaction to add
      */
     void createTransaction(AccountTransaction transaction) {
+        if (transaction.getAmount() > balanceAvailable) {
+            throw new TransferException(FAILURE_INSUFFICIENT_FUNDS, "Balance exceeded");
+        }
         transactions.add(0, transaction);
         transactionsById.put(transaction.getId(), transaction);
+        balanceAvailable -= transaction.getAmount();
+    }
+
+    /**
+     * Adds new transaction to the account.
+     *
+     * @param transactionId ID of the transaction to commit
+     */
+    Optional<AccountTransaction> commitTransaction(String transactionId) {
+        return Optional
+                .ofNullable(transactionsById.get(transactionId))
+                .map(t -> {
+                    balanceCurrent -= t.getAmount();
+                    t.setStatus(SUCCESS);
+                    return t;
+                });
+    }
+
+    /**
+     * Adds new transaction to the account.
+     *
+     * @param transactionId ID of the transaction to commit
+     */
+    Optional<AccountTransaction> rollbackTransaction(String transactionId) {
+        return Optional
+                .ofNullable(transactionsById.get(transactionId))
+                .map(t -> {
+                    balanceAvailable += t.getAmount();
+                    t.setStatus(FAILURE_CANCELED);
+                    return t;
+                });
     }
 
     /**

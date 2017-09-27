@@ -25,9 +25,7 @@ public interface Accounting {
      * @param account account to lookup the balance for
      * @return account balance if found
      */
-    default Optional<Balance> lookupBalance(BankAccount account) {
-        return lookupAccount(account).map(AccountConfig::getBalance);
-    }
+    Optional<Balance> lookupBalance(BankAccount account);
 
     /**
      * Creates a new transaction.
