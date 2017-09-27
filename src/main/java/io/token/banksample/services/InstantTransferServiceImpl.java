@@ -46,8 +46,6 @@ public class InstantTransferServiceImpl implements InstantTransferService {
         pricing.redeemQuote(transfer.getPricing().getSourceQuote());
 
         // TODO: Make this idempotent.
-        // TODO: We should still try to do FX if needed and there is no quote.
-        // Request a quote on the fly.
         AccountTransaction transaction = AccountTransaction.builder(DEBIT)
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())

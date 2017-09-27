@@ -22,8 +22,6 @@ import java.util.Optional;
 
 /**
  * Configuration based account service implementation.
- *
- * TODO: Account limits are not enforced at this point
  */
 public final class AccountingImpl implements Accounting {
     private final Accounts config;
