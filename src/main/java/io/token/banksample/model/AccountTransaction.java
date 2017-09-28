@@ -10,8 +10,6 @@ import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transaction.TransactionProtos.TransactionStatus;
 import io.token.proto.common.transaction.TransactionProtos.TransactionType;
 
-import java.util.UUID;
-
 /**
  * Represents an account transaction. The transaction captures from, to, amount
  * and the current status.
@@ -228,8 +226,6 @@ public final class AccountTransaction {
         private Builder(TransactionType type) {
             this.type = type;
             this.description = "";
-
-            id(UUID.randomUUID().toString());
         }
 
         /**

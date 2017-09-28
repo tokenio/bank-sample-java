@@ -5,6 +5,7 @@ import static io.token.proto.common.transaction.TransactionProtos.TransactionSta
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 import static io.token.sdk.util.ProtoFactory.newMoney;
+import static java.lang.String.join;
 
 import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
@@ -45,8 +46,8 @@ public class InstantTransferServiceImpl implements InstantTransferService {
     public InstantTransaction beginDebitTransaction(InstantTransfer transfer) {
         pricing.redeemQuote(transfer.getPricing().getSourceQuote());
 
-        // TODO: Make this idempotent.
         AccountTransaction transaction = AccountTransaction.builder(DEBIT)
+                .id(join(":", transfer.getTokenTransferId(), DEBIT.name().toLowerCase()))
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getCounterpartyAccount().getAccount())
@@ -127,6 +128,7 @@ public class InstantTransferServiceImpl implements InstantTransferService {
         }
 
         AccountTransaction transaction = AccountTransaction.builder(CREDIT)
+                .id(join(":", transfer.getTokenTransferId(), CREDIT.name().toLowerCase()))
                 .referenceId(transfer.getTokenTransferId())
                 .from(transfer.getAccount())
                 .to(transfer.getCounterpartyAccount().getAccount())

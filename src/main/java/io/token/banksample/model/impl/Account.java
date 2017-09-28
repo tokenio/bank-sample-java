@@ -46,14 +46,21 @@ public class Account {
      * Adds new transaction to the account.
      *
      * @param transaction transaction to add
+     * @return true if transaction has been created, false if duplicate
      */
-    void createTransaction(AccountTransaction transaction) {
+    boolean createTransaction(AccountTransaction transaction) {
+        if (transactionsById.containsKey(transaction.getId())) {
+            return false;
+        }
+
         if (transaction.getAmount() > balanceAvailable) {
             throw new TransferException(FAILURE_INSUFFICIENT_FUNDS, "Balance exceeded");
         }
+
         transactions.add(0, transaction);
         transactionsById.put(transaction.getId(), transaction);
         balanceAvailable -= transaction.getAmount();
+        return true;
     }
 
     /**

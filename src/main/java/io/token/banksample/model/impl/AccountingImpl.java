@@ -47,7 +47,7 @@ public final class AccountingImpl implements Accounting {
     }
 
     @Override
-    public Optional<Balance> lookupBalance(BankAccount account) {
+    public synchronized Optional<Balance> lookupBalance(BankAccount account) {
         return config
                 .tryLookupAccount(account)
                 .flatMap(a -> Optional.ofNullable(accounts.get(a)))
@@ -57,7 +57,9 @@ public final class AccountingImpl implements Accounting {
     @Override
     public synchronized void createDebitTransaction(AccountTransaction transaction) {
         Preconditions.checkArgument(transaction.getType() == DEBIT);
-        createTransaction(transaction);
+        if (!createTransaction(transaction)) {
+            return;
+        }
 
         if (transaction.getCurrency().equals(transaction.getTransferCurrency())) {
             // If FX is not needed, just move the money to the holding account.
@@ -188,12 +190,12 @@ public final class AccountingImpl implements Accounting {
                 .orElse(emptyList());
     }
 
-    private void createTransaction(AccountTransaction transaction) {
+    private boolean createTransaction(AccountTransaction transaction) {
         AccountConfig account = config.lookupAccount(transaction.getFrom());
         if (account.matches(config.getRejectAccount(transaction.getCurrency()))) {
             throw new TransferException(FAILURE_CANCELED, "Reject account - cancelled");
         }
-        accounts
+        return accounts
                 .get(account)
                 .createTransaction(transaction);
     }
