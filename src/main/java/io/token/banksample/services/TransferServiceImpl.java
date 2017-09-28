@@ -60,7 +60,8 @@ public class TransferServiceImpl implements TransferService {
                 .build();
         accounts.createDebitTransaction(transaction);
 
-        // TODO: Not sure what would normally happen here.
+        // A bank needs to initiate a transfer here. Leaving this part out
+        // since it changes from scheme to scheme.
 
         return transaction.toTransaction();
     }
