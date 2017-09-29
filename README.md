@@ -3,7 +3,7 @@ Overview
 A sample of bank implementation using Token Integration SDK.
 
 Responds to TokenOS bank API requests with static data;
-alter the model integrate with bank systems.
+alter the model to integrate with bank systems.
 
 
 IMPORTANT
@@ -35,6 +35,10 @@ gradle build tool.
 ```
 
 The build produces shadow (fat) jar that can be run from the command line.
+
+```sh
+java -jar build/libs/bank-sample-java-1.0.0-all.jar
+```
 
 Run
 ------
