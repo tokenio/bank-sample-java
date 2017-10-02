@@ -2,6 +2,8 @@ package io.token.banksample.model;
 
 import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 
+import java.math.BigDecimal;
+
 /**
  * Pricing engine abstraction.
  */
@@ -40,4 +42,12 @@ public interface Pricing {
      * @param quote previously generated quote
      */
     void redeemQuote(TransferQuote quote);
+
+    /**
+     * Look up an FX rate
+     * @param baseCurrency 'EUR' in 'EUR/USD'
+     * @param quoteCurrency 'USD' in 'EUR/USD'
+     * @return rate
+     */
+    BigDecimal lookupFxRate(String baseCurrency, String quoteCurrency);
 }

@@ -54,20 +54,31 @@ public class PricingServiceImpl implements PricingService {
                     FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
                     "Account not found: " + destination));
 
-        if (balance.getAvailable().compareTo(amount) < 0) {
+        String targetCurrency = counterpartyQuote.getAccountCurrency().isEmpty()
+                ? currency
+                : counterpartyQuote.getAccountCurrency();
+
+        TransferQuote quote = debitQuote
+                .map(qu -> pricing.lookupQuote(qu.getId()))
+                .orElseGet(() -> pricing.debitQuote(
+                        balance.getCurrency(),
+                        targetCurrency));
+
+        BigDecimal potentialCost = amount;
+        if (balance.getCurrency() != currency) {
+            potentialCost = potentialCost.divide(
+                    pricing.lookupFxRate(balance.getCurrency(), currency),
+                    3,
+                    BigDecimal.ROUND_UP);
+        }
+
+        if (balance.getAvailable().compareTo(potentialCost) < 0) {
             throw new PrepareTransferException(
                     FAILURE_INSUFFICIENT_FUNDS,
                     "Balance exceeded");
         }
 
-        String targetCurrency = counterpartyQuote.getAccountCurrency().isEmpty()
-                ? currency
-                : counterpartyQuote.getAccountCurrency();
-        return debitQuote
-                .map(quote -> pricing.lookupQuote(quote.getId()))
-                .orElseGet(() -> pricing.debitQuote(
-                        balance.getCurrency(),
-                        targetCurrency));
+        return quote;
     }
 
     /**
