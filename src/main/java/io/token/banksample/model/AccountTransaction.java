@@ -2,12 +2,14 @@ package io.token.banksample.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.token.proto.bankapi.Bankapi.StatusCode.PROCESSING;
+import static io.token.sdk.util.ProtoFactory.toTransactionStatus;
 
+import io.token.proto.bankapi.Bankapi.StatusCode;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.money.MoneyProtos;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
-import io.token.proto.common.transaction.TransactionProtos.TransactionStatus;
 import io.token.proto.common.transaction.TransactionProtos.TransactionType;
 
 /**
@@ -26,7 +28,7 @@ public final class AccountTransaction {
     private final double transferAmount;
     private final String transferCurrency;
     private final String description;
-    private volatile TransactionStatus status;
+    private volatile StatusCode status;
 
     /**
      * Creates new transaction builder.
@@ -78,7 +80,7 @@ public final class AccountTransaction {
         this.transferAmount = transferAmount;
         this.transferCurrency = transferCurrency;
         this.description = description;
-        this.status = TransactionStatus.PROCESSING;
+        this.status = PROCESSING;
     }
 
     /**
@@ -178,7 +180,7 @@ public final class AccountTransaction {
      *
      * @param status new transaction status
      */
-    public void setStatus(TransactionStatus status) {
+    public void setStatus(StatusCode status) {
         this.status = status;
     }
 
@@ -193,7 +195,7 @@ public final class AccountTransaction {
                 .setId(id)
                 .setTokenTransferId(getReferenceId())
                 .setType(getType())
-                .setStatus(status)
+                .setStatus(toTransactionStatus(status))
                 .setDescription(description)
                 .setAmount(MoneyProtos.Money.newBuilder()
                         .setValue(Double.toString(getAmount()))

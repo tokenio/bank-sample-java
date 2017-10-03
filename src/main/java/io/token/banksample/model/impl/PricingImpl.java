@@ -1,13 +1,13 @@
 package io.token.banksample.model.impl;
 
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INVALID_CURRENCY;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INVALID_QUOTE;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INVALID_CURRENCY;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INVALID_QUOTE;
 import static java.lang.String.format;
 
 import io.token.banksample.model.Pricing;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
-import io.token.sdk.api.PrepareTransferException;
+import io.token.sdk.api.BankException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,7 +33,7 @@ public final class PricingImpl implements Pricing {
     public synchronized TransferQuote lookupQuote(String id) {
         return Optional
                 .ofNullable(quotes.get(id))
-                .orElseThrow(() -> new PrepareTransferException(
+                .orElseThrow(() -> new BankException(
                         FAILURE_INVALID_QUOTE,
                         format("Price quote not found: %s", id)));
     }
@@ -70,7 +70,7 @@ public final class PricingImpl implements Pricing {
                 .filter(r -> r.getBaseCurrency().equals(baseCurrency))
                 .filter(r -> r.getQuoteCurrency().equals(quoteCurrency))
                 .findFirst()
-                .orElseThrow(() -> new PrepareTransferException(
+                .orElseThrow(() -> new BankException(
                         FAILURE_INVALID_CURRENCY,
                         format("FX rate not found %s -> %s", baseCurrency, quoteCurrency)));
 
@@ -92,7 +92,7 @@ public final class PricingImpl implements Pricing {
     public synchronized void redeemQuote(TransferQuote quote) {
         TransferQuote lookedUp = quotes.get(quote.getId());
         if (!quote.equals(lookedUp)) {
-            throw new PrepareTransferException(
+            throw new BankException(
                     FAILURE_INVALID_QUOTE,
                     format("Quote not found: %s", quote));
         }

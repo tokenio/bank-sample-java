@@ -1,9 +1,8 @@
 package io.token.banksample.services;
 
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INSUFFICIENT_FUNDS;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_INVALID_CURRENCY;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INSUFFICIENT_FUNDS;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INVALID_CURRENCY;
 
 import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Pricing;
@@ -12,7 +11,7 @@ import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.PurposeOfPayment;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.TransferEndpoint;
 import io.token.sdk.api.Balance;
-import io.token.sdk.api.PrepareTransferException;
+import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.PricingService;
 
 import java.math.BigDecimal;
@@ -50,12 +49,12 @@ public class PricingServiceImpl implements PricingService {
             Optional<TransferQuote> debitQuote) {  // TODO: Remove this? Skip prepareDebit?
         Balance balance = accounts
                 .lookupBalance(source)
-                .orElseThrow(() -> new PrepareTransferException(
-                    FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                    FAILURE_ACCOUNT_NOT_FOUND,
                     "Account not found: " + destination));
 
         if (balance.getAvailable().compareTo(amount) < 0) {
-            throw new PrepareTransferException(
+            throw new BankException(
                     FAILURE_INSUFFICIENT_FUNDS,
                     "Balance exceeded");
         }
@@ -88,12 +87,12 @@ public class PricingServiceImpl implements PricingService {
             Optional<TransferQuote> creditQuote) {   // TODO: Similar to debit, remove?
         Balance balance = accounts
                 .lookupBalance(destination.getAccount())
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_DESTINATION_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "Account not found: " + destination));
 
         if (!balance.getCurrency().equals(currency)) {
-            throw new PrepareTransferException(
+            throw new BankException(
                     FAILURE_INVALID_CURRENCY,
                     "Credit side FX is not supported");
         }

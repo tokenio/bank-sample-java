@@ -1,8 +1,8 @@
 package io.token.banksample.model.impl;
 
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_CANCELED;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INSUFFICIENT_FUNDS;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.SUCCESS;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_CANCELED;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INSUFFICIENT_FUNDS;
+import static io.token.proto.bankapi.Bankapi.StatusCode.SUCCESS;
 import static java.lang.Math.min;
 import static java.math.BigDecimal.ROUND_FLOOR;
 
