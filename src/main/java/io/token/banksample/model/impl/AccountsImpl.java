@@ -1,13 +1,13 @@
 package io.token.banksample.model.impl;
 
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
 import static io.token.proto.common.account.AccountProtos.BankAccount.AccountCase.SWIFT;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
 import static java.util.stream.Collectors.toMap;
 
 import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.Accounts;
 import io.token.proto.common.account.AccountProtos.BankAccount;
-import io.token.sdk.api.PrepareTransferException;
+import io.token.sdk.api.BankException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,8 +50,8 @@ public class AccountsImpl implements Accounts {
         return Optional
                 .ofNullable(holdAccounts.get(currency))
                 .map(AccountConfig::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "Hold account is not found for: " + currency));
     }
 
@@ -60,8 +60,8 @@ public class AccountsImpl implements Accounts {
         return Optional
                 .ofNullable(settlementAccounts.get(currency))
                 .map(AccountConfig::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "Settlement account is not found for: " + currency));
     }
 
@@ -70,8 +70,8 @@ public class AccountsImpl implements Accounts {
         return Optional
                 .ofNullable(fxAccounts.get(currency))
                 .map(AccountConfig::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "FX account is not found for: " + currency));
     }
 
@@ -80,8 +80,8 @@ public class AccountsImpl implements Accounts {
         return Optional
                 .ofNullable(rejectAccounts.get(currency))
                 .map(AccountConfig::toBankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "Reject account is not found for: " + currency));
     }
 

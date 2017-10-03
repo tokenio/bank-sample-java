@@ -1,7 +1,7 @@
 package io.token.banksample.services;
 
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INVALID_CURRENCY;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INVALID_CURRENCY;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 import static io.token.sdk.util.ProtoFactory.newMoney;
@@ -13,9 +13,9 @@ import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Pricing;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.money.MoneyProtos.Money;
+import io.token.sdk.api.BankException;
 import io.token.sdk.api.InstantTransaction;
 import io.token.sdk.api.InstantTransfer;
-import io.token.sdk.api.PrepareTransferException;
 import io.token.sdk.api.TransferException;
 import io.token.sdk.api.service.InstantTransferService;
 
@@ -114,8 +114,8 @@ public class InstantTransferServiceImpl implements InstantTransferService {
     public InstantTransaction beginCreditTransaction(InstantTransfer transfer) {
         AccountConfig account = accounts
                 .lookupAccount(transfer.getAccount())
-                .orElseThrow(() -> new PrepareTransferException(
-                    FAILURE_DESTINATION_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                    FAILURE_ACCOUNT_NOT_FOUND,
                     "Account not found: " + transfer.getAccount()));
 
         if (!account

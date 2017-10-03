@@ -1,10 +1,10 @@
 package io.token.banksample.model;
 
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_SOURCE_ACCOUNT_NOT_FOUND;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
 
 import io.token.banksample.config.AccountConfig;
 import io.token.proto.common.account.AccountProtos.BankAccount;
-import io.token.sdk.api.PrepareTransferException;
+import io.token.sdk.api.BankException;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -68,11 +68,10 @@ public interface Accounts {
      * @return looked up account
      */
     default AccountConfig lookupAccount(BankAccount account) {
-        // TODO: Fix the error code.
         return this
                 .tryLookupAccount(account)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_SOURCE_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "Account not found"));
     }
 }
