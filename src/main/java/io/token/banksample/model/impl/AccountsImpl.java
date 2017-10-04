@@ -18,7 +18,6 @@ import java.util.Optional;
 /**
  * Configuration based {@link Accounts} implementation.
  */
-// TODO: Fix error codes.
 public class AccountsImpl implements Accounts {
     private final Map<String, AccountConfig> holdAccounts;
     private final Map<String, AccountConfig> settlementAccounts;
