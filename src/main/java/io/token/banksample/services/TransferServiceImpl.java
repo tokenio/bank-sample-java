@@ -1,14 +1,13 @@
 package io.token.banksample.services;
 
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_GENERIC;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INSUFFICIENT_FUNDS;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionStatus.FAILURE_INVALID_CURRENCY;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_GENERIC;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INSUFFICIENT_FUNDS;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INVALID_CURRENCY;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 import static java.lang.String.join;
 
 import io.token.banksample.model.AccountTransaction;
 import io.token.banksample.model.Accounting;
-import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.sdk.api.Balance;
 import io.token.sdk.api.Transfer;
 import io.token.sdk.api.TransferException;
@@ -25,7 +24,7 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Override
-    public Transaction transfer(Transfer transfer) throws TransferException {
+    public String transfer(Transfer transfer) throws TransferException {
         Balance balance = accounts
                 .lookupBalance(transfer.getAccount())
                 .orElseThrow(() -> new TransferException(
@@ -63,6 +62,6 @@ public class TransferServiceImpl implements TransferService {
         // A bank needs to initiate a transfer here. Leaving this part out
         // since it changes from scheme to scheme.
 
-        return transaction.toTransaction();
+        return transaction.getId();
     }
 }

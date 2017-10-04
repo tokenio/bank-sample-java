@@ -1,7 +1,7 @@
 package io.token.banksample.services;
 
 import static io.grpc.Status.NOT_FOUND;
-import static io.token.proto.common.token.TokenProtos.TransferTokenStatus.FAILURE_DESTINATION_ACCOUNT_NOT_FOUND;
+import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
 import static java.util.stream.Collectors.toList;
 
 import io.token.banksample.config.AccountConfig;
@@ -11,7 +11,7 @@ import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
 import io.token.sdk.api.Balance;
-import io.token.sdk.api.PrepareTransferException;
+import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.AccountService;
 
 import java.util.List;
@@ -47,8 +47,8 @@ public class AccountServiceImpl implements AccountService {
         // Could be the source account.
         AccountConfig account = accounts
                 .lookupAccount(bankAccount)
-                .orElseThrow(() -> new PrepareTransferException(
-                        FAILURE_DESTINATION_ACCOUNT_NOT_FOUND,
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
                         "Account not found"));
 
         return CustomerData.newBuilder()
