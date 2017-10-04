@@ -57,13 +57,12 @@ public class PricingServiceImpl implements PricingService {
                 balance.getCurrency(),
                 targetCurrency);
 
-        BigDecimal potentialCost = amount;
-        if (balance.getCurrency() != currency) {
-            potentialCost = potentialCost.divide(
-                    pricing.lookupFxRate(balance.getCurrency(), currency),
-                    3,
-                    BigDecimal.ROUND_UP);
-        }
+        BigDecimal potentialCost = balance.getCurrency() == currency ?
+                amount :
+                amount.divide(
+                        pricing.lookupFxRate(balance.getCurrency(), currency),
+                        3,
+                        BigDecimal.ROUND_UP);
 
         if (balance.getAvailable().compareTo(potentialCost) < 0) {
             throw new BankException(
