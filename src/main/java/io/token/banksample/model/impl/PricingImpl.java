@@ -9,6 +9,7 @@ import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
 import io.token.sdk.api.BankException;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -66,13 +67,7 @@ public final class PricingImpl implements Pricing {
      */
     @Override
     public synchronized TransferQuote debitQuote(String baseCurrency, String quoteCurrency) {
-        FxRate fxRate = rates.stream()
-                .filter(r -> r.getBaseCurrency().equals(baseCurrency))
-                .filter(r -> r.getQuoteCurrency().equals(quoteCurrency))
-                .findFirst()
-                .orElseThrow(() -> new BankException(
-                        FAILURE_INVALID_CURRENCY,
-                        format("FX rate not found %s -> %s", baseCurrency, quoteCurrency)));
+        FxRate fxRate = getFxRate(baseCurrency, quoteCurrency);
 
         TransferQuote quote = TransferQuote.newBuilder()
                 .setId(UUID.randomUUID().toString())
@@ -96,5 +91,20 @@ public final class PricingImpl implements Pricing {
                     FAILURE_INVALID_QUOTE,
                     format("Quote not found: %s", quote));
         }
+    }
+
+    @Override
+    public BigDecimal lookupFxRate(String baseCurrency, String quoteCurrency) {
+        return new BigDecimal(getFxRate(baseCurrency, quoteCurrency).getRate());
+    }
+
+    FxRate getFxRate(String baseCurrency, String quoteCurrency) {
+        return rates.stream()
+                .filter(r -> r.getBaseCurrency().equals(baseCurrency))
+                .filter(r -> r.getQuoteCurrency().equals(quoteCurrency))
+                .findFirst()
+                .orElseThrow(() -> new BankException(
+                        FAILURE_INVALID_CURRENCY,
+                        format("FX rate not found %s -> %s", baseCurrency, quoteCurrency)));
     }
 }
