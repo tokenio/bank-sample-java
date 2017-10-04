@@ -1,6 +1,5 @@
 package io.token.banksample.services;
 
-import static io.grpc.Status.NOT_FOUND;
 import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
 import static java.util.stream.Collectors.toList;
 
@@ -29,22 +28,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Balance getBalance(BankAccount account) {
-        // TODO: Improve error codes.
         return accounts
                 .lookupBalance(account)
-                .orElseThrow(() -> NOT_FOUND
-                        .withDescription("Account not found")
-                        .asRuntimeException());
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
+                        "Account not found"));
     }
 
     @Override
     public CustomerData getCustomerData(BankAccount bankAccount) {
-        // TODO: PrepareTransferException is wrong here, need to either user
-        // TODO: Improve error codes.
-        // Status.NOT_FOUND or have a global list of errors that can be used
-        // in multiple places.
-        // Also makes no sense for this to return _DESTINATION_*_NOT_FOUND.
-        // Could be the source account.
         AccountConfig account = accounts
                 .lookupAccount(bankAccount)
                 .orElseThrow(() -> new BankException(
