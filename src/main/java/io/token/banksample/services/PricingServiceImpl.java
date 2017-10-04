@@ -15,12 +15,9 @@ import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.PricingService;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 /**
  * Sample implementation of the {@link PricingService}. Returns fake data.
- *
- * TODO: Make counterparty quote optional.
  */
 public class PricingServiceImpl implements PricingService {
     private final Accounting accounts;
@@ -44,9 +41,8 @@ public class PricingServiceImpl implements PricingService {
             String currency,
             BankAccount source,
             TransferEndpoint destination,
-            TransferQuote counterpartyQuote,       // TODO: Remove this? Just remove?
-            PurposeOfPayment paymentPurpose,
-            Optional<TransferQuote> debitQuote) {  // TODO: Remove this? Skip prepareDebit?
+            TransferQuote counterpartyQuote,
+            PurposeOfPayment paymentPurpose) throws BankException {
         Balance balance = accounts
                 .lookupBalance(source)
                 .orElseThrow(() -> new BankException(
@@ -62,11 +58,10 @@ public class PricingServiceImpl implements PricingService {
         String targetCurrency = counterpartyQuote.getAccountCurrency().isEmpty()
                 ? currency
                 : counterpartyQuote.getAccountCurrency();
-        return debitQuote
-                .map(quote -> pricing.lookupQuote(quote.getId()))
-                .orElseGet(() -> pricing.debitQuote(
-                        balance.getCurrency(),
-                        targetCurrency));
+
+        return pricing.debitQuote(
+                balance.getCurrency(),
+                targetCurrency);
     }
 
     /**
@@ -83,8 +78,7 @@ public class PricingServiceImpl implements PricingService {
             String currency,
             TransferEndpoint source,
             TransferEndpoint destination,
-            PurposeOfPayment paymentPurpose,
-            Optional<TransferQuote> creditQuote) {   // TODO: Similar to debit, remove?
+            PurposeOfPayment paymentPurpose) throws BankException {
         Balance balance = accounts
                 .lookupBalance(destination.getAccount())
                 .orElseThrow(() -> new BankException(
@@ -97,8 +91,6 @@ public class PricingServiceImpl implements PricingService {
                     "Credit side FX is not supported");
         }
 
-        return creditQuote
-                .map(quote -> pricing.lookupQuote(quote.getId()))
-                .orElseGet(() -> pricing.creditQuote(currency, balance.getCurrency()));
+        return pricing.creditQuote(currency, balance.getCurrency());
     }
 }

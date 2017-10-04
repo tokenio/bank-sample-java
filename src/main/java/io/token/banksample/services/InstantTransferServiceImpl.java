@@ -22,11 +22,6 @@ import io.token.sdk.api.service.InstantTransferService;
 /**
  * Sample implementation of the {@link InstantTransferService}. Returns fake
  * data.
- *
- * TODO:
- *      - Remove the Optional quote passed by the client from the prepare* calls.
- *        We want to instead skip the prepare* calls altogether if we have the
- *        quote already.
  */
 public class InstantTransferServiceImpl implements InstantTransferService {
     private final Accounting accounts;
