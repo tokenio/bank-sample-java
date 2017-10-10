@@ -31,16 +31,16 @@ public class TransferServiceImpl implements TransferService {
                         FAILURE_GENERIC,
                         "Account not found: " + transfer.getAccount()));
 
-        if (balance.getAvailable().compareTo(transfer.getTransactionAmount()) < 0) {
-            throw new TransferException(
-                    FAILURE_INSUFFICIENT_FUNDS,
-                    "Balance exceeded");
-        }
-
         if (!balance.getCurrency().equals(transfer.getRequestedAmountCurrency())) {
             throw new TransferException(
                     FAILURE_INVALID_CURRENCY,
                     "FX is not supported");
+        }
+
+        if (balance.getAvailable().compareTo(transfer.getTransactionAmount()) < 0) {
+            throw new TransferException(
+                    FAILURE_INSUFFICIENT_FUNDS,
+                    "Balance exceeded");
         }
 
         AccountTransaction transaction = AccountTransaction.builder(DEBIT)
