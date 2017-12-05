@@ -27,12 +27,12 @@ repositories {
 }
 
 group = 'io.token.banksample'
-version = '1.0.0'
+version = '1.0.1'
 project.mainClassName = project.group + '.Application'
 
 ext {
     ver = [
-        tokenIntegrationSdk: '2.0.3',
+        tokenIntegrationSdk: '2.0.5',
     ]
 }
 
