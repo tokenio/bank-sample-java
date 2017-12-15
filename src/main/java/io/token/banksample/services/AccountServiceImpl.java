@@ -44,6 +44,10 @@ public class AccountServiceImpl implements AccountService {
                         "Account not found"));
 
         return CustomerData.newBuilder()
+                // Append to list of account holder names.
+                // It's a list because there might be more than
+                // one, e.g., for a joint account.
+                // (Config test data doesn't have any joint accounts.)
                 .addLegalNames(account.getName())
                 .setAddress(account.getAddress())
                 .build();
