@@ -57,7 +57,7 @@ public class PricingServiceImpl implements PricingService {
                 balance.getCurrency(),
                 targetCurrency);
 
-        BigDecimal potentialCost = balance.getCurrency() == currency ?
+        BigDecimal potentialCost = balance.getCurrency().equals(currency) ?
                 amount :
                 amount.divide(
                         pricing.lookupFxRate(balance.getCurrency(), currency),
