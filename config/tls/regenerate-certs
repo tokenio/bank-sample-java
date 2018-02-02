@@ -1,6 +1,16 @@
 #!/bin/bash
 
-domain=demo.example.com
+# ./regenerate-certs : Generate key.pem and cert.pem for TLS communication
+
+# ./regenerate-certs other.example.com : As above, but set up to serve
+#                                        from other.example.com instead
+#                                        of default domain.
+
+domain=demo.example.com # default domain
+
+if [ "$1" != "" ]; then
+    domain=$1
+fi
 
 # Generate cert
 openssl req \
