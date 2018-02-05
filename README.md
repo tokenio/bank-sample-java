@@ -34,20 +34,14 @@ gradle build tool.
 ./gradlew build
 ```
 
-The build produces shadow (fat) jar that can be run from the command line.
-
-```sh
-java -jar build/libs/bank-sample-java-1.0.0-all.jar
-```
-
 Run
 ------
 
-To run the server locally run the command specified below. The server
-listens on port 9300 for gRPC requests.
+The build produces shadow (fat) jar that can be run from the command line.
+E.g., to run the server, passing the `--ssl` flag: 
 
 ```sh
-./gradlew run
+java -jar build/libs/bank-sample-java-1.0.1-all.jar --ssl
 ```
 
 Changing
