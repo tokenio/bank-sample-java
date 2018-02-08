@@ -7,12 +7,15 @@ import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
 import io.token.banksample.model.Accounting;
 import io.token.proto.common.account.AccountProtos.BankAccount;
+import io.token.proto.common.account.AccountProtos.BankAccount.Sepa;
+import io.token.proto.common.account.AccountProtos.BankAccount.Swift;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
 import io.token.sdk.api.Balance;
 import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.AccountService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,5 +70,38 @@ public class AccountServiceImpl implements AccountService {
                 .stream()
                 .map(AccountTransaction::toTransaction)
                 .collect(toList());
+    }
+
+    @Override
+    public List<BankAccount> resolveTransferDestination(BankAccount account) {
+        accounts.lookupAccount(account)
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
+                        "Account not found"));
+        List<BankAccount> accounts = new ArrayList<>();
+        accounts.add(account);
+
+        // For a bank that supports more than one way to transfer,
+        // this list would have more than one item.
+        // This simple sample only does Swift. But a bank
+        // that supports other transfer-methods can return more:
+        // switch (account.getAccountCase()) {
+        //     case SWIFT: {
+        //         BankAccount otherAccount = BankAccount.
+        //                 newBuilder().
+        //                 setSepa(Sepa.newBuilder(). ...).
+        //                 build();
+        //         accounts.add(otherAccount);
+        //     }
+        //     case SEPA: {
+        //         BankAccount otherAccount = BankAccount.
+        //                 newBuilder().
+        //                 setSwift(Swift.newBuilder() ...).
+        //                 build();
+        //         accounts.add(otherAccount);
+        //     }
+        // }
+
+        return accounts;
     }
 }
