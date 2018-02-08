@@ -13,6 +13,7 @@ import io.token.sdk.api.Balance;
 import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.AccountService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,5 +68,19 @@ public class AccountServiceImpl implements AccountService {
                 .stream()
                 .map(AccountTransaction::toTransaction)
                 .collect(toList());
+    }
+
+    @Override
+    public List<BankAccount> resolveTransferDestination(BankAccount account) {
+        accounts
+                .lookupBalance(account)
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
+                        "Account not found"));
+        // For a bank that supports more than one way to transfer,
+        // this list would have more than one item.
+        List<BankAccount> accounts = new ArrayList<>();
+        accounts.add(account);
+        return accounts;
     }
 }
