@@ -5,7 +5,11 @@ import static java.util.stream.Collectors.toList;
 import com.typesafe.config.Config;
 import io.token.proto.common.address.AddressProtos.Address;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
+import io.token.security.SecretKeyStore;
+import io.token.security.TrustedKeyStore;
+import io.token.security.keystore.KeyStoreFactory;
 
+import java.security.KeyStore;
 import java.util.List;
 
 /**
@@ -90,6 +94,60 @@ public final class ConfigParser {
                                     .build());
                 })
                 .collect(toList());
+    }
+
+    /**
+     * Extracts bank id from config
+     *
+     * @return bank id
+     */
+    public String bankId() {
+        return config.getString("bank-details.bank-id");
+    }
+
+    /**
+     * Extracts the secret key store for generating bank authorization payload.
+     *
+     * @return SecretKeyStore
+     */
+    public SecretKeyStore secretKeyStore() {
+        return KeyStoreFactory.createSecretKeyStore(config.getConfigList("secret-key-store"));
+    }
+
+    /**
+     * Extracts the trusted key store for generating bank authorization payload.
+     *
+     * @return TrustedKeyStore
+     */
+    public TrustedKeyStore trustedKeyStore() {
+        return KeyStoreFactory.createTrustedKeyStore(config.getConfigList("trusted-key-store"));
+    }
+
+    /**
+     * Extracts the expiration offset from config.
+     *
+     * @return expiration offset
+     */
+    public long expirationOffset() {
+        return config.getLong("expiration-offset-ms");
+    }
+
+    /**
+     * Extracts the id of the key to be used for encryption.
+     *
+     * @return encryption key id
+     */
+    public String encryptionKeyId() {
+        return config.getString("encryption-key-id");
+    }
+
+    /**
+     * Extracts the encryption method.
+     *
+     * @return encryption method
+     */
+    public String encryptionMethod() {
+        return config.getString("encryption-method");
     }
 
     private List<AccountConfig> accountsFor(String category) {
