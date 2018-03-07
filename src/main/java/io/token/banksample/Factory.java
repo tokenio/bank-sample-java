@@ -51,10 +51,11 @@ final class Factory {
                 config.fxAccounts(),
                 config.rejectAccounts(),
                 config.customerAccounts());
+
+        // By default, clock is set to UTC and expiration is set to 1 day
         BankAccountAuthorizer authorizer = BankAccountAuthorizer.builder(config.bankId())
                 .withSecretKeystore(config.secretKeyStore())
                 .withTrustedKeystore(config.trustedKeyStore())
-                .withExpiration(Duration.ofMillis(config.expirationOffset()))
                 .useKey(config.encryptionKeyId())
                 .useMethod(SecurityProtos.SealedMessage.MethodCase.valueOf(
                         config.encryptionMethod()))
