@@ -109,7 +109,7 @@ public final class ConfigParser {
      * @return bank id
      */
     public String bankId() {
-        return config.getString("bank-details.bank-id");
+        return config.getString("bank.bank-id");
     }
 
     /**
@@ -131,21 +131,12 @@ public final class ConfigParser {
     }
 
     /**
-     * Extracts the expiration offset from config.
-     *
-     * @return expiration offset
-     */
-    public long expirationOffset() {
-        return config.getLong("expiration-offset-ms");
-    }
-
-    /**
      * Extracts the id of the key to be used for encryption.
      *
      * @return encryption key id
      */
     public String encryptionKeyId() {
-        return config.getString("encryption-key-id");
+        return config.getString("encryption.encryption-key-id");
     }
 
     /**
@@ -154,7 +145,7 @@ public final class ConfigParser {
      * @return encryption method
      */
     public String encryptionMethod() {
-        return config.getString("encryption-method");
+        return config.getString("encryption.encryption-method");
     }
 
     /**
