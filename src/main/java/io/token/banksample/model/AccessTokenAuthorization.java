@@ -13,7 +13,7 @@ public abstract class AccessTokenAuthorization {
      * @param accessToken access token string
      * @param memberId token member id
      * @param accounts list of named account
-     * @return
+     * @return access token authorization object
      */
     public static AccessTokenAuthorization create(
             String accessToken,
