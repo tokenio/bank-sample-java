@@ -60,7 +60,9 @@ final class Factory {
                         config.encryptionMethod()))
                 .build();
         this.accounting = new AccountingImpl(accounts);
-        this.accountLinking = new AccountLinkingImpl(authorizer);
+        this.accountLinking = new AccountLinkingImpl(
+                authorizer,
+                config.accessTokenAuthorizations());
         this.pricing = new PricingImpl(config.fxRates());
     }
 
