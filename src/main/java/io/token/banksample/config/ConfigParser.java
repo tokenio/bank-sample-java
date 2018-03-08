@@ -113,39 +113,43 @@ public final class ConfigParser {
     }
 
     /**
-     * Extracts the secret key store for generating bank authorization payload.
+     * Extracts the secret key store for generating bank authorization payload
+     * for account linking.
      *
      * @return SecretKeyStore
      */
     public SecretKeyStore secretKeyStore() {
-        return KeyStoreFactory.createSecretKeyStore(config.getConfigList("secret-key-store"));
+        return KeyStoreFactory.createSecretKeyStore(
+                config.getConfigList("account-linking.secret-key-store"));
     }
 
     /**
-     * Extracts the trusted key store for generating bank authorization payload.
+     * Extracts the trusted key store for generating bank authorization payload
+     * for account linking
      *
      * @return TrustedKeyStore
      */
     public TrustedKeyStore trustedKeyStore() {
-        return KeyStoreFactory.createTrustedKeyStore(config.getConfigList("trusted-key-store"));
+        return KeyStoreFactory.createTrustedKeyStore(
+                config.getConfigList("account-linking.trusted-key-store"));
     }
 
     /**
-     * Extracts the id of the key to be used for encryption.
+     * Extracts the id of the key to be used for encryption for account linking.
      *
      * @return encryption key id
      */
     public String encryptionKeyId() {
-        return config.getString("encryption.encryption-key-id");
+        return config.getString("account-linking.encryption.encryption-key-id");
     }
 
     /**
-     * Extracts the encryption method.
+     * Extracts the encryption method for account linking.
      *
      * @return encryption method
      */
     public String encryptionMethod() {
-        return config.getString("encryption.encryption-method");
+        return config.getString("account-linking.encryption.encryption-method");
     }
 
     /**
