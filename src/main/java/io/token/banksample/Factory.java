@@ -52,13 +52,13 @@ final class Factory {
                 config.rejectAccounts(),
                 config.customerAccounts());
 
-        // By default, clock is set to UTC and expiration is set to 1 day
         BankAccountAuthorizer authorizer = BankAccountAuthorizer.builder(config.bankId())
                 .withSecretKeystore(config.secretKeyStore())
                 .withTrustedKeystore(config.trustedKeyStore())
                 .useKey(config.encryptionKeyId())
                 .useMethod(SecurityProtos.SealedMessage.MethodCase.valueOf(
                         config.encryptionMethod()))
+                // expiration is set to 1 day by default
                 .build();
         this.accounting = new AccountingImpl(accounts);
         this.accountLinking = new AccountLinkingImpl(
