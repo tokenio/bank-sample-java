@@ -33,6 +33,7 @@ public final class Application {
                 .forPort(args.port)
                 .reportErrorDetails()
                 .withAccountService(factory.accountService())
+                .withAccountLinkingService(factory.accountLinkingService())
                 .withInstantTransferService(factory.instantTransferService())
                 .withTransferService(factory.transferService())
                 .withPricingService(factory.pricingService())
