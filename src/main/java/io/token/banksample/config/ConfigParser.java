@@ -5,7 +5,7 @@ import static java.util.stream.Collectors.toMap;
 
 import com.typesafe.config.Config;
 import io.token.banksample.model.AccessTokenAuthorization;
-import io.token.proto.common.account.AccountProtos;
+import io.token.proto.common.account.AccountProtos.AccountFeatures;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.address.AddressProtos.Address;
 import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
@@ -14,7 +14,6 @@ import io.token.security.SecretKeyStore;
 import io.token.security.TrustedKeyStore;
 import io.token.security.keystore.KeyStoreFactory;
 
-import java.security.KeyStore;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -218,6 +217,10 @@ public final class ConfigParser {
                                 BankAccount.Swift.newBuilder()
                                         .setAccount(accountConfig.getNumber())
                                         .setBic(accountConfig.getBic()))
+                        .setAccountFeatures(AccountFeatures.newBuilder()
+                                .setSupportsPayment(true)
+                                .setSupportsReceivePayment(true)
+                                .setSupportsSendPayment(true))
                         .build(),
                 accountConfig.getName());
     }
