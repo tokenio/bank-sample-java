@@ -26,6 +26,9 @@ public class CliArgs {
     @Parameter(names = { "--usage", "-u" }, description = "Show usage")
     private boolean usage;
 
+    @Parameter(names = { "--http" }, description = "Use HTTP")
+    boolean useHttp = false;
+
     private CliArgs() {}
 
     /**

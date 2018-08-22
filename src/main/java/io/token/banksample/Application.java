@@ -1,5 +1,6 @@
 package io.token.banksample;
 
+import io.token.sdk.HttpServerBuilder;
 import io.token.sdk.ServerBuilder;
 
 import java.io.IOException;
@@ -24,6 +25,14 @@ public final class Application {
         CliArgs args = CliArgs.parse(argv);
         logger.info("Command line arguments: {}", args);
 
+        if (args.useHttp) {
+            startHttpServer(args);
+        } else {
+            startRpcServer(args);
+        }
+    }
+
+    private static void startRpcServer(CliArgs args) {
         // Create a factory used to instantiate all the service implementations
         // that are needed to initialize the server.
         Factory factory = new Factory(args.configPath("application.conf"));
@@ -39,7 +48,7 @@ public final class Application {
                 .withPricingService(factory.pricingService())
                 .withStorageService(factory.storageService());
         if (args.useSsl) {
-                server.withTls(
+            server.withTls(
                     args.configPath("tls", "cert.pem"),
                     args.configPath("tls", "key.pem"),
                     args.configPath("tls", "trusted-certs.pem"));
@@ -50,5 +59,27 @@ public final class Application {
                 .build()
                 .start()
                 .await();
+    }
+
+    private static void startHttpServer(CliArgs args) {
+        // Create a factory used to instantiate all the service implementations
+        // that are needed to initialize the server.
+        Factory factory = new Factory(args.configPath("application.conf"));
+
+        // Build an HTTP server instance.
+        HttpServerBuilder server = HttpServerBuilder
+                .forPort(args.port)
+                .reportErrorDetails()
+                .withAccountService(factory.accountService())
+                .withAccountLinkingService(factory.accountLinkingService())
+                .withInstantTransferService(factory.instantTransferService())
+                .withTransferService(factory.transferService())
+                .withPricingService(factory.pricingService())
+                .withStorageService(factory.storageService());
+
+        // You will need to Ctrl-C to exit.
+        server
+                .build()
+                .start();
     }
 }
