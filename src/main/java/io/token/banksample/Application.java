@@ -43,9 +43,7 @@ public final class Application {
                 .reportErrorDetails()
                 .withAccountService(factory.accountService())
                 .withAccountLinkingService(factory.accountLinkingService())
-                .withInstantTransferService(factory.instantTransferService())
                 .withTransferService(factory.transferService())
-                .withPricingService(factory.pricingService())
                 .withStorageService(factory.storageService());
         if (args.useSsl) {
             server.withTls(
@@ -72,9 +70,7 @@ public final class Application {
                 .reportErrorDetails()
                 .withAccountService(factory.accountService())
                 .withAccountLinkingService(factory.accountLinkingService())
-                .withInstantTransferService(factory.instantTransferService())
                 .withTransferService(factory.transferService())
-                .withPricingService(factory.pricingService())
                 .withStorageService(factory.storageService());
 
         // You will need to Ctrl-C to exit.

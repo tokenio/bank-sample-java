@@ -5,28 +5,21 @@ import io.token.banksample.config.ConfigParser;
 import io.token.banksample.model.AccountLinking;
 import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Accounts;
-import io.token.banksample.model.Pricing;
 import io.token.banksample.model.impl.AccountLinkingImpl;
 import io.token.banksample.model.impl.AccountingImpl;
 import io.token.banksample.model.impl.AccountsImpl;
-import io.token.banksample.model.impl.PricingImpl;
 import io.token.banksample.services.AccountLinkingServiceImpl;
 import io.token.banksample.services.AccountServiceImpl;
-import io.token.banksample.services.InstantTransferServiceImpl;
-import io.token.banksample.services.PricingServiceImpl;
 import io.token.banksample.services.StorageServiceImpl;
 import io.token.banksample.services.TransferServiceImpl;
 import io.token.proto.common.security.SecurityProtos;
 import io.token.sdk.BankAccountAuthorizer;
 import io.token.sdk.api.service.AccountLinkingService;
 import io.token.sdk.api.service.AccountService;
-import io.token.sdk.api.service.InstantTransferService;
-import io.token.sdk.api.service.PricingService;
 import io.token.sdk.api.service.StorageService;
 import io.token.sdk.api.service.TransferService;
 
 import java.io.File;
-import java.time.Duration;
 
 /**
  * A factory class that is used to instantiate various services that are
@@ -35,7 +28,6 @@ import java.time.Duration;
 final class Factory {
     private final Accounting accounting;
     private final AccountLinking accountLinking;
-    private final Pricing pricing;
 
     /**
      * Creates new factory instance.
@@ -47,9 +39,7 @@ final class Factory {
         ConfigParser config = new ConfigParser(ConfigFactory.parseFile(configFile));
         Accounts accounts = new AccountsImpl(
                 config.holdAccounts(),
-                config.settlementAccounts(),
                 config.fxAccounts(),
-                config.rejectAccounts(),
                 config.customerAccounts());
 
         BankAccountAuthorizer authorizer = BankAccountAuthorizer.builder(config.bankId())
@@ -64,7 +54,6 @@ final class Factory {
         this.accountLinking = new AccountLinkingImpl(
                 authorizer,
                 config.accessTokenAuthorizations());
-        this.pricing = new PricingImpl(config.fxRates());
     }
 
     /**
@@ -95,27 +84,9 @@ final class Factory {
     }
 
     /**
-     * Creates new {@link InstantTransferService} instance.
-     *
-     * @return new pricing service instance
-     */
-    PricingService pricingService() {
-        return new PricingServiceImpl(accounting, pricing);
-    }
-
-    /**
-     * Creates new {@link InstantTransferService} instance.
-     *
-     * @return new instant updatePayment service instance
-     */
-    InstantTransferService instantTransferService() {
-        return new InstantTransferServiceImpl(accounting, pricing);
-    }
-
-    /**
      * Creates new {@link TransferService} instance.
      *
-     * @return new updatePayment service instance
+     * @return new transfer service instance
      */
     TransferService transferService() {
         return new TransferServiceImpl(accounting);

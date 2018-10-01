@@ -52,7 +52,6 @@ public class TransferServiceImpl implements TransferService {
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
                 .transferAmount(
-                        transfer.getQuote(),
                         transfer.getTransactionAmount().doubleValue(),
                         transfer.getTransactionAmountCurrency())
                 .description(transfer.getDescription())

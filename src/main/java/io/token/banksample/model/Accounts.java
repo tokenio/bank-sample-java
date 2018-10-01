@@ -22,29 +22,12 @@ public interface Accounts {
     BankAccount getHoldAccount(String currency);
 
     /**
-     * Returns settlement account for the given currency.
-     *
-     * @param currency currency to lookup the account for
-     * @return looked up account
-     */
-    BankAccount getSettlementAccount(String currency);
-
-    /**
      * Returns FX account for the given currency.
      *
      * @param currency currency to lookup the account for
      * @return looked up account
      */
     BankAccount getFxAccount(String currency);
-
-    /**
-     * Returns reject account for the given currency. Used for testing, a
-     * transfer initiated against a reject account is rejected
-     *
-     * @param currency currency to lookup the account for
-     * @return looked up account
-     */
-    BankAccount getRejectAccount(String currency);
 
     /**
      * Returns all the configured accounts.

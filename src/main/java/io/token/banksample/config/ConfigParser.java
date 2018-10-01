@@ -52,54 +52,12 @@ public final class ConfigParser {
     }
 
     /**
-     * Extracts settlement account list.
-     *
-     * @return settlement accounts
-     */
-    public List<AccountConfig> settlementAccounts() {
-        return accountsFor("settlement");
-    }
-
-    /**
      * FX accounts account list.
      *
      * @return FX accounts
      */
     public List<AccountConfig> fxAccounts() {
         return accountsFor("fx");
-    }
-
-    /**
-     * Reject accounts account list.
-     *
-     * @return reject accounts
-     */
-    public List<AccountConfig> rejectAccounts() {
-        return accountsFor("reject");
-    }
-
-    /**
-     * Extracts FX rate list.
-     *
-     * @return FX rates
-     */
-    public List<FxRate> fxRates() {
-        Config fx = config.getConfig("pricing.FX");
-        return fx.root().unwrapped()
-                .keySet()
-                .stream()
-                .flatMap(from -> {
-                    Config toConfig = fx.getConfig(from);
-                    return toConfig.root().unwrapped()
-                            .keySet()
-                            .stream()
-                            .map(to -> FxRate.newBuilder()
-                                    .setBaseCurrency(from)
-                                    .setQuoteCurrency(to)
-                                    .setRate(toConfig.getString(to))
-                                    .build());
-                })
-                .collect(toList());
     }
 
     /**

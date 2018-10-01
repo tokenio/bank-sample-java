@@ -41,7 +41,7 @@ The build produces shadow (fat) jar that can be run from the command line.
 E.g., to run the server, passing the `--ssl` flag: 
 
 ```sh
-java -jar build/libs/bank-sample-java-1.0.1-all.jar --ssl
+java -jar build/libs/bank-sample-java-1.1.4-all.jar --ssl
 ```
 
 Changing
@@ -56,7 +56,7 @@ This is useful for passing the TokenOS test suite; but the bank
 should alter this code so that it actually interacts with bank systems.
 This means changing the `model` code
 (in `src/main/java/io/token/banksample/model`).
-This code's interfaces are desgined as a lowest-common-denominator
+This code's interfaces are designed as a lowest-common-denominator
 model of bank systems.
 When altering this code to use real bank systems, the bank almost
 certainly must add new methods and alter existing methods.
@@ -66,10 +66,8 @@ the model to reflect this.
 
 `src/main/java/io/token/banksample/model`
 * `Accounting.java` - Accounting interface
-* `Pricing.java` - Pricing (FX and fees) interface
 * `impl/`
   * `AccountingImpl.java` - Accounting implementation
-  * `PricingingImpl.java` - Pricing (FX and fees) implementation
 
 The bank needs to add interfaces to the model to work with bank
 systems not included in the original model.
@@ -86,6 +84,4 @@ to use the model in the bank-specific correct manner.
 
 `src/main/java/io/token/banksample/services`
 * `AccountServiceImpl.java` - Account information
-* `InstantTransferServiceImpl.java` - Instant transfers
-* `PricingServiceImpl.java` - Pricing for instant payments
-* `TransferServiceImpl.java` - Not-instant transfers
+* `TransferServiceImpl.java` - Transfers

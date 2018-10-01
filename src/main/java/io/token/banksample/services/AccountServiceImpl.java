@@ -6,9 +6,8 @@ import static java.util.stream.Collectors.toList;
 import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
 import io.token.banksample.model.Accounting;
+import io.token.proto.PagedList;
 import io.token.proto.common.account.AccountProtos.BankAccount;
-import io.token.proto.common.account.AccountProtos.BankAccount.Sepa;
-import io.token.proto.common.account.AccountProtos.BankAccount.Swift;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
 import io.token.sdk.api.Balance;
@@ -64,17 +63,23 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<Transaction> getTransactions(BankAccount account, int offset, int limit) {
-        return accounts
+    public PagedList<Transaction, String> getTransactions(
+            BankAccount account,
+            String cursor,
+            int limit) {
+        int offset = decodeCursor(cursor);
+        List<Transaction> transactions = accounts
                 .lookupTransactions(account, offset, limit)
                 .stream()
                 .map(AccountTransaction::toTransaction)
                 .collect(toList());
+        return PagedList.create(transactions, encodeCursor(offset + transactions.size()));
     }
 
     @Override
     public List<BankAccount> resolveTransferDestination(BankAccount account) {
-        accounts.lookupAccount(account)
+        accounts
+                .lookupAccount(account)
                 .orElseThrow(() -> new BankException(
                         FAILURE_ACCOUNT_NOT_FOUND,
                         "Account not found"));
@@ -87,21 +92,40 @@ public class AccountServiceImpl implements AccountService {
         // that supports other transfer-methods can return more:
         // switch (account.getAccountCase()) {
         //     case SWIFT: {
-        //         BankAccount otherAccount = BankAccount.
-        //                 newBuilder().
-        //                 setSepa(Sepa.newBuilder(). ...).
-        //                 build();
+        //         BankAccount otherAccount = BankAccount
+        //                 .newBuilder().
+        //                 .setSepa(Sepa.newBuilder() ...)
+        //                 .build();
         //         accounts.add(otherAccount);
         //     }
         //     case SEPA: {
-        //         BankAccount otherAccount = BankAccount.
-        //                 newBuilder().
-        //                 setSwift(Swift.newBuilder() ...).
-        //                 build();
+        //         BankAccount otherAccount = BankAccount
+        //                 .newBuilder()
+        //                 .setSwift(Swift.newBuilder() ...)
+        //                 .build();
         //         accounts.add(otherAccount);
         //     }
         // }
 
         return accounts;
+    }
+
+    private int decodeCursor(String encoded) {
+        if (encoded.isEmpty()) {
+            // An empty cursor indicates paging should begin at the start.
+            return 0;
+        } else {
+            // Parse the cursor. The format of the string is up to the bank and is opaque to Token.
+            return Integer.parseInt(encoded);
+        }
+    }
+
+    private String encodeCursor(int offset) {
+        // Encode the cursor to return in the PagedList. This value will be passed into
+        // getTransactions in subsequent requests.
+        //
+        // The format of the string is up to the bank and is opaque to Token; in this case we are
+        // just using the string value of the cursor's position in the transaction list.
+        return String.valueOf(offset);
     }
 }
