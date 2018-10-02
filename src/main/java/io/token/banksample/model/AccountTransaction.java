@@ -24,7 +24,6 @@ public final class AccountTransaction {
     private final BankAccount to;
     private final double amount;
     private final String currency;
-    private final TransferQuote transferQuote;
     private final double transferAmount;
     private final String transferCurrency;
     private final String description;
@@ -51,7 +50,6 @@ public final class AccountTransaction {
      * @param to to / beneficiary account
      * @param amount transaction amount, as posted to the customer account
      * @param currency transaction currency
-     * @param transferQuote transfer pricing quote
      * @param transferAmount transfer amount, could be different from customer
      *      amount if FX is involved
      * @param transferCurrency transfer currency
@@ -65,7 +63,6 @@ public final class AccountTransaction {
             BankAccount to,
             double amount,
             String currency,
-            TransferQuote transferQuote,
             double transferAmount,
             String transferCurrency,
             String description) {
@@ -76,7 +73,6 @@ public final class AccountTransaction {
         this.to = to;
         this.amount = amount;
         this.currency = currency;
-        this.transferQuote = transferQuote;
         this.transferAmount = transferAmount;
         this.transferCurrency = transferCurrency;
         this.description = description;
@@ -147,15 +143,6 @@ public final class AccountTransaction {
     }
 
     /**
-     * Returns transfer pricing quote.
-     *
-     * @return transfer pricing quote
-     */
-    public TransferQuote getTransferQuote() {
-        return transferQuote;
-    }
-
-    /**
      * Returns transfer amount. Could be different from the transaction
      * amount if Fx is involved.
      *
@@ -217,7 +204,6 @@ public final class AccountTransaction {
         private String currency;
         private double transferAmount;
         private String transferCurrency;
-        private TransferQuote transferQuote;
         private String description;
 
         /**
@@ -292,16 +278,11 @@ public final class AccountTransaction {
          * Sets transfer amount. This could be different from transaction amount
          * if FX is involved
          *
-         * @param quote price quote
          * @param amount transfer amount
          * @param currency transfer currency
          * @return this builder
          */
-        public Builder transferAmount(
-                TransferQuote quote,
-                double amount,
-                String currency) {
-            this.transferQuote = quote;
+        public Builder transferAmount(double amount, String currency) {
             this.transferAmount = amount;
             this.transferCurrency = currency;
             return this;
@@ -335,7 +316,6 @@ public final class AccountTransaction {
                     checkNotNull(to, "'To' account must be set"),
                     amount,
                     checkNotNull(currency, "Currency must be set"),
-                    checkNotNull(transferQuote, "Transfer quote must be set"),
                     transferAmount,
                     checkNotNull(transferCurrency, "Transfer currency must be set"),
                     description);

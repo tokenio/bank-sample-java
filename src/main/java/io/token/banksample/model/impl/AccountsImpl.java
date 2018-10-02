@@ -20,27 +20,19 @@ import java.util.Optional;
  */
 public class AccountsImpl implements Accounts {
     private final Map<String, AccountConfig> holdAccounts;
-    private final Map<String, AccountConfig> settlementAccounts;
     private final Map<String, AccountConfig> fxAccounts;
-    private final Map<String, AccountConfig> rejectAccounts;
     private final List<AccountConfig> accounts;
 
     public AccountsImpl(
             Collection<AccountConfig> holdAccounts,
-            Collection<AccountConfig> settlementAccounts,
             Collection<AccountConfig> fxAccounts,
-            Collection<AccountConfig> rejectAccounts,
             Collection<AccountConfig> customerAccounts) {
         this.holdAccounts = indexAccounts(holdAccounts);
-        this.settlementAccounts = indexAccounts(settlementAccounts);
         this.fxAccounts = indexAccounts(fxAccounts);
-        this.rejectAccounts = indexAccounts(rejectAccounts);
         this.accounts = new ArrayList<AccountConfig>() {{
             addAll(holdAccounts);
-            addAll(settlementAccounts);
             addAll(fxAccounts);
             addAll(customerAccounts);
-            addAll(rejectAccounts);
         }};
     }
 
@@ -55,16 +47,6 @@ public class AccountsImpl implements Accounts {
     }
 
     @Override
-    public BankAccount getSettlementAccount(String currency) {
-        return Optional
-                .ofNullable(settlementAccounts.get(currency))
-                .map(AccountConfig::toBankAccount)
-                .orElseThrow(() -> new BankException(
-                        FAILURE_ACCOUNT_NOT_FOUND,
-                        "Settlement account is not found for: " + currency));
-    }
-
-    @Override
     public BankAccount getFxAccount(String currency) {
         return Optional
                 .ofNullable(fxAccounts.get(currency))
@@ -72,16 +54,6 @@ public class AccountsImpl implements Accounts {
                 .orElseThrow(() -> new BankException(
                         FAILURE_ACCOUNT_NOT_FOUND,
                         "FX account is not found for: " + currency));
-    }
-
-    @Override
-    public BankAccount getRejectAccount(String currency) {
-        return Optional
-                .ofNullable(rejectAccounts.get(currency))
-                .map(AccountConfig::toBankAccount)
-                .orElseThrow(() -> new BankException(
-                        FAILURE_ACCOUNT_NOT_FOUND,
-                        "Reject account is not found for: " + currency));
     }
 
     @Override

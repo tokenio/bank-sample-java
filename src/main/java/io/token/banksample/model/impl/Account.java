@@ -5,12 +5,14 @@ import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_INSUFFICIENT_FUN
 import static io.token.proto.bankapi.Bankapi.StatusCode.SUCCESS;
 import static java.lang.Math.min;
 import static java.math.BigDecimal.ROUND_FLOOR;
+import static java.util.Collections.emptyList;
 
 import io.token.banksample.model.AccountTransaction;
 import io.token.sdk.api.Balance;
 import io.token.sdk.api.TransferException;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,7 +22,7 @@ import java.util.Optional;
 /**
  * Maintains a list of per account transactions.
  */
-public class Account {
+class Account {
     private final List<AccountTransaction> transactions;
     private final Map<String, AccountTransaction> transactionsById;
     private final String currency;
@@ -39,7 +41,9 @@ public class Account {
         return Balance.create(
                 currency,
                 BigDecimal.valueOf(balanceAvailable).setScale(2, ROUND_FLOOR),
-                BigDecimal.valueOf(balanceCurrent).setScale(2, ROUND_FLOOR));
+                BigDecimal.valueOf(balanceCurrent).setScale(2, ROUND_FLOOR),
+                Instant.now().toEpochMilli(),
+                emptyList());
     }
 
     /**
@@ -64,7 +68,8 @@ public class Account {
     }
 
     /**
-     * Adds new transaction to the account.
+     * Commits a transaction. Note this method is not called by Token; the specifics of when a
+     * transaction is considered complete is up to the bank and payment scheme used.
      *
      * @param transactionId ID of the transaction to commit
      */
@@ -79,9 +84,10 @@ public class Account {
     }
 
     /**
-     * Adds new transaction to the account.
+     * Cancels a transaction. Note this method is not called by Token; the specifics of when a
+     * transaction is rejected is up to the bank and payment scheme used.
      *
-     * @param transactionId ID of the transaction to commit
+     * @param transactionId ID of the transaction to cancel
      */
     Optional<AccountTransaction> rollbackTransaction(String transactionId) {
         return Optional

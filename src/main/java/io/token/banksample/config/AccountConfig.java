@@ -1,13 +1,14 @@
 package io.token.banksample.config;
 
+import static java.util.Collections.emptyList;
+
 import com.google.auto.value.AutoValue;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.address.AddressProtos.Address;
 import io.token.sdk.api.Balance;
 
 import java.math.BigDecimal;
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
+import java.time.Instant;
 
 /**
  * A bank account configuration.
@@ -40,7 +41,9 @@ public abstract class AccountConfig {
                 Balance.create(
                         currency,
                         BigDecimal.valueOf(balance),
-                        BigDecimal.valueOf(balance)));
+                        BigDecimal.valueOf(balance),
+                        Instant.now().toEpochMilli(),
+                        emptyList()));
     }
 
     /**
@@ -96,19 +99,6 @@ public abstract class AccountConfig {
      * @return account balance
      */
     public abstract Balance getBalance();
-
-    /**
-     * Returns true if this account matches the supplied argument.
-     *
-     * @param account account to match against
-     * @return true if matches
-     */
-    public boolean matches(BankAccount account) {
-        return new EqualsBuilder()
-                .append(getBic(), account.getSwift().getBic())
-                .append(getNumber(), account.getSwift().getAccount())
-                .build();
-    }
 
     /**
      * Helper method to convert this object to the proto account definition.

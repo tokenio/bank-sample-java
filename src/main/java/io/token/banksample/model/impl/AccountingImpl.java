@@ -1,8 +1,5 @@
 package io.token.banksample.model.impl;
 
-import static io.grpc.Status.NOT_FOUND;
-import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_CANCELED;
-import static io.token.proto.common.transaction.TransactionProtos.TransactionType.CREDIT;
 import static io.token.proto.common.transaction.TransactionProtos.TransactionType.DEBIT;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
@@ -14,7 +11,6 @@ import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Accounts;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.sdk.api.Balance;
-import io.token.sdk.api.TransferException;
 
 import java.util.List;
 import java.util.Map;
@@ -75,7 +71,7 @@ public final class AccountingImpl implements Accounting {
             // Create two transfers to account for FX.
             // 1) DB customer, credit FX in the customer account currency.
             // 2) DB FX, credit hold account in the settlement account currency.
-            // Note that we are not accounting for  the spread with this
+            // Note that we are not accounting for the spread with this
             // transaction pair, it goes 'nowhere'.
             ledger.post(
                     AccountTransfer.builder()
@@ -93,79 +89,6 @@ public final class AccountingImpl implements Accounting {
                                     transaction.getTransferCurrency())
                             .build());
         }
-    }
-
-    @Override
-    public synchronized void createCreditTransaction(AccountTransaction transaction) {
-        Preconditions.checkArgument(transaction.getType() == CREDIT);
-        createTransaction(transaction);
-    }
-
-    @Override
-    public synchronized void commitDebitTransaction(
-            BankAccount account,
-            String transferId,
-            String transactionId) {
-        AccountTransaction transaction = config
-                .tryLookupAccount(account)
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .flatMap(a -> a.commitTransaction(transactionId))
-                .orElseThrow(NOT_FOUND::asRuntimeException);
-        ledger.post(AccountTransfer.builder()
-                .transferId(transferId)
-                .from(transaction.getTo())
-                .to(config.getSettlementAccount(transaction.getCurrency()))
-                .withAmount(transaction.getAmount(), transaction.getCurrency())
-                .build());
-    }
-
-    @Override
-    public synchronized void commitCreditTransaction(
-            BankAccount account,
-            String transferId,
-            String transactionId) {
-        AccountTransaction transaction = config
-                .tryLookupAccount(account)
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .flatMap(a -> a.commitTransaction(transactionId))
-                .orElseThrow(NOT_FOUND::asRuntimeException);
-        ledger.post(AccountTransfer.builder()
-                .transferId(transferId)
-                .from(config.getSettlementAccount(transaction.getCurrency()))
-                .to(account)
-                .withAmount(transaction.getAmount(), transaction.getCurrency())
-                .build());
-    }
-
-    @Override
-    public synchronized void rollbackDebitTransaction(
-            BankAccount account,
-            String transferId,
-            String transactionId) {
-        config
-                .tryLookupAccount(account)
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .flatMap(a -> a.rollbackTransaction(transactionId))
-                .ifPresent(transaction -> {
-                    transaction.setStatus(FAILURE_CANCELED);
-                    ledger.post(AccountTransfer.builder()
-                            .transferId(transferId)
-                            .from(transaction.getTo())
-                            .to(transaction.getFrom())
-                            .withAmount(transaction.getAmount(), transaction.getCurrency())
-                            .build());
-                });
-    }
-
-    @Override
-    public synchronized void rollbackCreditTransaction(
-            BankAccount account,
-            String transferId,
-            String transactionId) {
-        config
-                .tryLookupAccount(account)
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .ifPresent(a -> a.rollbackTransaction(transactionId));
     }
 
     @Override
@@ -191,12 +114,8 @@ public final class AccountingImpl implements Accounting {
     }
 
     private boolean createTransaction(AccountTransaction transaction) {
-        AccountConfig account = config.lookupAccount(transaction.getFrom());
-        if (account.matches(config.getRejectAccount(transaction.getCurrency()))) {
-            throw new TransferException(FAILURE_CANCELED, "Reject account - cancelled");
-        }
         return accounts
-                .get(account)
+                .get(config.lookupAccount(transaction.getFrom()))
                 .createTransaction(transaction);
     }
 }

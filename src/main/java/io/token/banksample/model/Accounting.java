@@ -33,12 +33,6 @@ public interface Accounting {
      * @param transaction new transaction
      */
     void createDebitTransaction(AccountTransaction transaction);
-    void commitDebitTransaction(BankAccount account, String transferId, String transactionId);
-    void rollbackDebitTransaction(BankAccount account, String transferId, String transactionId);
-
-    void createCreditTransaction(AccountTransaction transaction);
-    void commitCreditTransaction(BankAccount account, String transferId, String transactionId);
-    void rollbackCreditTransaction(BankAccount account, String transferId, String transactionId);
 
     /**
      * Looks up transaction given the account and transaction ID.
