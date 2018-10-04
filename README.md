@@ -41,7 +41,7 @@ The build produces shadow (fat) jar that can be run from the command line.
 E.g., to run the server, passing the `--ssl` flag: 
 
 ```sh
-java -jar build/libs/bank-sample-java-1.1.4-all.jar --ssl
+java -jar build/libs/bank-sample-java-1.1.5-all.jar --ssl
 ```
 
 Changing

@@ -10,6 +10,7 @@ import io.token.proto.PagedList;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
+import io.token.proto.common.transferinstructions.TransferInstructionsProtos.TransferEndpoint;
 import io.token.sdk.api.Balance;
 import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.AccountService;
@@ -38,24 +39,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public CustomerData getCustomerData(BankAccount bankAccount) {
-        AccountConfig account = accounts
-                .lookupAccount(bankAccount)
-                .orElseThrow(() -> new BankException(
-                        FAILURE_ACCOUNT_NOT_FOUND,
-                        "Account not found"));
-
-        return CustomerData.newBuilder()
-                // Append to list of account holder names.
-                // It's a list because there might be more than
-                // one, e.g., for a joint account.
-                // (Config test data doesn't have any joint accounts.)
-                .addLegalNames(account.getName())
-                .setAddress(account.getAddress())
-                .build();
-    }
-
-    @Override
     public Optional<Transaction> getTransaction(BankAccount account, String transactionId) {
         return accounts
                 .lookupTransaction(account, transactionId)
@@ -77,37 +60,52 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<BankAccount> resolveTransferDestination(BankAccount account) {
-        accounts
-                .lookupAccount(account)
+    public List<TransferEndpoint> resolveTransferDestination(BankAccount bankAccount) {
+        AccountConfig account = accounts
+                .lookupAccount(bankAccount)
                 .orElseThrow(() -> new BankException(
                         FAILURE_ACCOUNT_NOT_FOUND,
                         "Account not found"));
-        List<BankAccount> accounts = new ArrayList<>();
-        accounts.add(account);
+
+        CustomerData customerData = CustomerData.newBuilder()
+                // Append to list of account holder names.
+                // It's a list because there might be more than
+                // one, e.g., for a joint account.
+                // (Config test data doesn't have any joint accounts.)
+                .addLegalNames(account.getName())
+                .setAddress(account.getAddress())
+                .build();
+
+        List<TransferEndpoint> destinations = new ArrayList<>();
+        destinations.add(TransferEndpoint.newBuilder()
+                .setAccount(bankAccount)
+                // Customer data should be provided if the transfer method requires additional
+                // information about the beneficiary, e.g., legal name).
+                .setCustomerData(customerData)
+                .build());
 
         // For a bank that supports more than one way to transfer,
         // this list would have more than one item.
         // This simple sample only does Swift. But a bank
         // that supports other transfer-methods can return more:
-        // switch (account.getAccountCase()) {
+        // switch (bankAccount.getAccountCase()) {
         //     case SWIFT: {
         //         BankAccount otherAccount = BankAccount
         //                 .newBuilder().
         //                 .setSepa(Sepa.newBuilder() ...)
         //                 .build();
-        //         accounts.add(otherAccount);
+        //         destinations.add(otherAccount);
         //     }
         //     case SEPA: {
         //         BankAccount otherAccount = BankAccount
         //                 .newBuilder()
         //                 .setSwift(Swift.newBuilder() ...)
         //                 .build();
-        //         accounts.add(otherAccount);
+        //         destinations.add(otherAccount);
         //     }
         // }
 
-        return accounts;
+        return destinations;
     }
 
     private int decodeCursor(String encoded) {
