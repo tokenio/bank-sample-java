@@ -73,6 +73,10 @@ public final class Application {
                 .withTransferService(factory.transferService())
                 .withStorageService(factory.storageService());
 
+        if (args.httpBearerToken != null) {
+            server.withBearerAuthorization(args.httpBearerToken);
+        }
+
         // You will need to Ctrl-C to exit.
         server
                 .build()
