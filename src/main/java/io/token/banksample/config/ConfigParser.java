@@ -8,7 +8,6 @@ import io.token.banksample.model.AccessTokenAuthorization;
 import io.token.proto.common.account.AccountProtos.AccountFeatures;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.address.AddressProtos.Address;
-import io.token.proto.common.pricing.PricingProtos.TransferQuote.FxRate;
 import io.token.sdk.NamedAccount;
 import io.token.security.SecretKeyStore;
 import io.token.security.TrustedKeyStore;
@@ -178,7 +177,8 @@ public final class ConfigParser {
                         .setAccountFeatures(AccountFeatures.newBuilder()
                                 .setSupportsPayment(true)
                                 .setSupportsReceivePayment(true)
-                                .setSupportsSendPayment(true))
+                                .setSupportsSendPayment(true)
+                                .setSupportsInformation(true))
                         .build(),
                 accountConfig.getName());
     }
