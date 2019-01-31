@@ -26,9 +26,6 @@ public class CliArgs {
     @Parameter(names = { "--usage", "-u" }, description = "Show usage")
     private boolean usage;
 
-    @Parameter(names = { "--http" }, description = "Use HTTP")
-    boolean useHttp = false;
-
     @Parameter(names = { "--http-bearer-token" }, description = "Set HTTP Bearer token")
     String httpBearerToken;
 
