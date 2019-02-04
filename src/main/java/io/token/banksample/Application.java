@@ -1,15 +1,7 @@
 package io.token.banksample;
 
-import com.typesafe.config.ConfigFactory;
-import io.token.banksample.config.ConfigParser;
-import io.token.banksample.model.Accounting;
-import io.token.banksample.model.Accounts;
-import io.token.banksample.model.impl.AccountingImpl;
-import io.token.banksample.model.impl.AccountsImpl;
-import io.token.proto.common.security.SecurityProtos;
-import io.token.sdk.BankAccountAuthorizer;
+import io.token.sdk.ServerBuilder;
 
-import java.io.File;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,31 +23,29 @@ public final class Application {
         CliArgs args = CliArgs.parse(argv);
         logger.info("Command line arguments: {}", args);
 
-        int port = args.port;
-        String certFile = args.configPath("tls", "cert.pem");
-        String keyFile = args.configPath("tls", "key.pem");
-        String trustedCertFile = args.configPath("tls", "trusted-certs.pem");
+        // Create a factory used to instantiate all the service implementations
+        // that are needed to initialize the server.
+        Factory factory = new Factory(args.configPath("application.conf"));
 
-        File configFile = new File(args.configPath("application.conf"));
-        ConfigParser config = new ConfigParser(ConfigFactory.parseFile(configFile));
-        Accounts accounts = new AccountsImpl(
-                config.holdAccounts(),
-                config.fxAccounts(),
-                config.customerAccounts());
+        // Build a gRPC server instance.
+        ServerBuilder server = ServerBuilder
+                .forPort(args.port)
+                .reportErrorDetails()
+                .withAccountService(factory.accountService())
+                .withAccountLinkingService(factory.accountLinkingService())
+                .withTransferService(factory.transferService())
+                .withStorageService(factory.storageService());
+        if (args.useSsl) {
+            server.withTls(
+                    args.configPath("tls", "cert.pem"),
+                    args.configPath("tls", "key.pem"),
+                    args.configPath("tls", "trusted-certs.pem"));
+        }
 
-        // Accounting service: Entry point to the Ruby Bank API
-        Accounting accounting = new AccountingImpl(accounts);
-
-        // Bank Account Authorizer: used to construct Bank Authorization payload
-        BankAccountAuthorizer authorizer = BankAccountAuthorizer.builder(config.bankId())
-                .withSecretKeystore(config.secretKeyStore())
-                .withTrustedKeystore(config.trustedKeyStore())
-                .useKey(config.encryptionKeyId())
-                .useMethod(SecurityProtos.SealedMessage.MethodCase.valueOf(
-                        config.encryptionMethod()))
-                // expiration is set to 1 day by default
-                .build();
-
-        // TODO: Use ServerBuilder to create a gRPC server, exposing the Bank API endpoints.
+        // You will need to Ctrl-C to exit.
+        server
+                .build()
+                .start()
+                .await();
     }
 }
