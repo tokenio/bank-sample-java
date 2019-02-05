@@ -2,7 +2,6 @@ package io.token.banksample;
 
 import com.typesafe.config.ConfigFactory;
 import io.token.banksample.config.ConfigParser;
-import io.token.banksample.model.AccessTokenAuthorization;
 import io.token.banksample.model.Accounting;
 import io.token.banksample.model.Accounts;
 import io.token.banksample.model.impl.AccountingImpl;
@@ -11,20 +10,16 @@ import io.token.banksample.services.AccountLinkingServiceImpl;
 import io.token.banksample.services.AccountServiceImpl;
 import io.token.banksample.services.StorageServiceImpl;
 import io.token.banksample.services.TransferServiceImpl;
-import io.token.proto.common.security.SecurityProtos;
-import io.token.sdk.BankAccountAuthorizer;
 import io.token.sdk.api.service.AccountLinkingService;
 import io.token.sdk.api.service.AccountService;
 import io.token.sdk.api.service.StorageService;
 import io.token.sdk.api.service.TransferService;
 
 import java.io.File;
-import java.util.Map;
 
 public class Factory {
     private final Accounting accounting;
-    private final Map<String, AccessTokenAuthorization> authorizations;
-    private final BankAccountAuthorizer authorizer;
+    private final ConfigParser config;
 
     /**
      * Creates new factory instance.
@@ -39,18 +34,8 @@ public class Factory {
                 config.fxAccounts(),
                 config.customerAccounts());
 
-        BankAccountAuthorizer authorizer = BankAccountAuthorizer.builder(config.bankId())
-                .withSecretKeystore(config.secretKeyStore())
-                .withTrustedKeystore(config.trustedKeyStore())
-                .useKey(config.encryptionKeyId())
-                .useMethod(SecurityProtos.SealedMessage.MethodCase.valueOf(
-                        config.encryptionMethod()))
-                // expiration is set to 1 day by default
-                .build();
-
         this.accounting = new AccountingImpl(accounts);
-        this.authorizations = config.accessTokenAuthorizations();
-        this.authorizer = authorizer;
+        this.config = config;
     }
 
     /**
@@ -77,7 +62,7 @@ public class Factory {
      * @return new account linking service instance
      */
     public AccountLinkingService accountLinkingService() {
-        return new AccountLinkingServiceImpl(authorizations, authorizer);
+        return new AccountLinkingServiceImpl(config);
     }
 
     /**

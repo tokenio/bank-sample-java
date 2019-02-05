@@ -2,22 +2,15 @@ package io.token.banksample.services;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import io.token.banksample.model.AccessTokenAuthorization;
+import io.token.banksample.config.ConfigParser;
 import io.token.proto.banklink.Banklink.BankAuthorization;
-import io.token.sdk.BankAccountAuthorizer;
 import io.token.sdk.api.service.AccountLinkingService;
 
-import java.util.Map;
-
 public class AccountLinkingServiceImpl implements AccountLinkingService {
-    private final Map<String, AccessTokenAuthorization> authorizations;
-    private final BankAccountAuthorizer authorizer;
+    private final ConfigParser config;
 
-    public AccountLinkingServiceImpl(
-            Map<String, AccessTokenAuthorization> authorizations,
-            BankAccountAuthorizer authorizer) {
-        this.authorizations = authorizations;
-        this.authorizer = authorizer;
+    public AccountLinkingServiceImpl(ConfigParser config) {
+        this.config = config;
     }
 
     @Override

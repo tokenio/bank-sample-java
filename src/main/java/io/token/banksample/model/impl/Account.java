@@ -37,13 +37,16 @@ class Account {
         this.balanceCurrent = balanceCurrent;
     }
 
-    Balance getBalance() {
-        return Balance.create(
-                currency,
-                BigDecimal.valueOf(balanceAvailable).setScale(2, ROUND_FLOOR),
-                BigDecimal.valueOf(balanceCurrent).setScale(2, ROUND_FLOOR),
-                Instant.now().toEpochMilli(),
-                emptyList());
+    public String getCurrency() {
+        return currency;
+    }
+
+    public double getBalanceAvailable() {
+        return balanceAvailable;
+    }
+
+    public double getBalanceCurrent() {
+        return balanceCurrent;
     }
 
     /**

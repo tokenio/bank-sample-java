@@ -75,7 +75,7 @@ public class AccountsImpl implements Accounts {
         return accounts
                 .stream()
                 .collect(toMap(
-                        a -> a.getBalance().getCurrency(),
+                        a -> a.getCurrency(),
                         a -> a));
     }
 

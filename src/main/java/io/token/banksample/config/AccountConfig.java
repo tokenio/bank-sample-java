@@ -33,36 +33,13 @@ public abstract class AccountConfig {
             String number,
             String currency,
             double balance) {
-        return create(
+        return new AutoValue_AccountConfig(
                 name,
                 address,
                 bic,
                 number,
-                Balance.create(
-                        currency,
-                        BigDecimal.valueOf(balance),
-                        BigDecimal.valueOf(balance),
-                        Instant.now().toEpochMilli(),
-                        emptyList()));
-    }
-
-    /**
-     * Creates new bank account data structure.
-     *
-     * @param name account legal name
-     * @param address account physical address
-     * @param bic account BIC
-     * @param number account number
-     * @param balance account balance
-     * @return newly created account
-     */
-    private static AccountConfig create(
-            String name,
-            Address address,
-            String bic,
-            String number,
-            Balance balance) {
-        return new AutoValue_AccountConfig(name, address, bic, number, balance);
+                currency,
+                balance);
     }
 
     /**
@@ -94,11 +71,18 @@ public abstract class AccountConfig {
     public abstract String getNumber();
 
     /**
+     * Returns account currency code.
+     *
+     * @return account currency code
+     */
+    public abstract String getCurrency();
+
+    /**
      * Returns account balance.
      *
      * @return account balance
      */
-    public abstract Balance getBalance();
+    public abstract double getBalance();
 
     /**
      * Helper method to convert this object to the proto account definition.

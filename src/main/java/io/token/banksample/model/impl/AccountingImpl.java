@@ -31,23 +31,15 @@ public final class AccountingImpl implements Accounting {
                 .collect(toMap(
                         a -> a,
                         a -> new Account(
-                                a.getBalance().getCurrency(),
-                                a.getBalance().getAvailable().doubleValue(),
-                                a.getBalance().getCurrent().doubleValue())));
+                                a.getCurrency(),
+                                a.getBalance(),
+                                a.getBalance())));
         this.ledger = new AccountingLedger();
     }
 
     @Override
     public synchronized Optional<AccountConfig> lookupAccount(BankAccount account) {
         return config.tryLookupAccount(account);
-    }
-
-    @Override
-    public synchronized Optional<Balance> lookupBalance(BankAccount account) {
-        return config
-                .tryLookupAccount(account)
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .map(Account::getBalance);
     }
 
     @Override
@@ -89,28 +81,6 @@ public final class AccountingImpl implements Accounting {
                                     transaction.getTransferCurrency())
                             .build());
         }
-    }
-
-    @Override
-    public synchronized Optional<AccountTransaction> lookupTransaction(
-            BankAccount account,
-            String transactionId) {
-        return config
-                .tryLookupAccount(account)
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .flatMap(a -> a.lookupTransaction(transactionId));
-    }
-
-    @Override
-    public synchronized List<AccountTransaction> lookupTransactions(
-            BankAccount account,
-            int offset,
-            int limit) {
-        return Optional
-                .ofNullable(config.lookupAccount(account))
-                .flatMap(a -> Optional.ofNullable(accounts.get(a)))
-                .map(a -> a.lookupTransactions(offset, limit))
-                .orElse(emptyList());
     }
 
     private boolean createTransaction(AccountTransaction transaction) {
