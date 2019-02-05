@@ -1,8 +1,5 @@
 package io.token.banksample;
 
-import io.token.sdk.ServerBuilder;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,26 +23,5 @@ public final class Application {
         // Create a factory used to instantiate all the service implementations
         // that are needed to initialize the server.
         Factory factory = new Factory(args.configPath("application.conf"));
-
-        // Build a gRPC server instance.
-        ServerBuilder server = ServerBuilder
-                .forPort(args.port)
-                .reportErrorDetails()
-                .withAccountService(factory.accountService())
-                .withAccountLinkingService(factory.accountLinkingService())
-                .withTransferService(factory.transferService())
-                .withStorageService(factory.storageService());
-        if (args.useSsl) {
-            server.withTls(
-                    args.configPath("tls", "cert.pem"),
-                    args.configPath("tls", "key.pem"),
-                    args.configPath("tls", "trusted-certs.pem"));
-        }
-
-        // You will need to Ctrl-C to exit.
-        server
-                .build()
-                .start()
-                .await();
     }
 }
