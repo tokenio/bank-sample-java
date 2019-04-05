@@ -19,10 +19,6 @@ openssl req \
     -newkey rsa:4096 \
     -keyout key_temp.pem \
     -subj "/C=US/ST=CA/L=San Francisco/O=Token Inc/CN=${domain}" \
-    -reqexts SAN \
-    -extensions SAN \
-    -config <(cat /etc/ssl/openssl.cnf \
-            <(printf "\n[SAN]\nsubjectAltName=IP:${domain}")) \
     -out cert.pem \
     -days 120
 
