@@ -10,7 +10,7 @@ import io.token.proto.PagedList;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
-import io.token.proto.common.transferinstructions.TransferInstructionsProtos.TransferEndpoint;
+import io.token.proto.common.transferinstructions.TransferInstructionsProtos.TransferDestination;
 import io.token.sdk.api.Balance;
 import io.token.sdk.api.BankException;
 import io.token.sdk.api.service.AccountService;
@@ -60,7 +60,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<TransferEndpoint> resolveTransferDestination(BankAccount bankAccount) {
+    public List<TransferDestination> resolveTransferDestinations(BankAccount bankAccount) {
         AccountConfig account = accounts
                 .lookupAccount(bankAccount)
                 .orElseThrow(() -> new BankException(
@@ -76,34 +76,20 @@ public class AccountServiceImpl implements AccountService {
                 .setAddress(account.getAddress())
                 .build();
 
-        List<TransferEndpoint> destinations = new ArrayList<>();
-        destinations.add(TransferEndpoint.newBuilder()
-                .setAccount(bankAccount)
+        // For a bank that supports more than one way to transfer,
+        // this list would have more than one item.
+        // This simple sample only does Swift. But a bank
+        // that supports other transfer-methods can return more.
+        List<TransferDestination> destinations = new ArrayList<>();
+        destinations.add(TransferDestination.newBuilder()
+                .setSepa(TransferDestination.Sepa.newBuilder()
+                        .setBic(bankAccount.getSepa().getBic())
+                        .setIban(bankAccount.getSepa().getIban())
+                        .build())
                 // Customer data should be provided if the transfer method requires additional
                 // information about the beneficiary, e.g., legal name).
                 .setCustomerData(customerData)
                 .build());
-
-        // For a bank that supports more than one way to transfer,
-        // this list would have more than one item.
-        // This simple sample only does Swift. But a bank
-        // that supports other transfer-methods can return more:
-        // switch (bankAccount.getAccountCase()) {
-        //     case SWIFT: {
-        //         BankAccount otherAccount = BankAccount
-        //                 .newBuilder().
-        //                 .setSepa(Sepa.newBuilder() ...)
-        //                 .build();
-        //         destinations.add(otherAccount);
-        //     }
-        //     case SEPA: {
-        //         BankAccount otherAccount = BankAccount
-        //                 .newBuilder()
-        //                 .setSwift(Swift.newBuilder() ...)
-        //                 .build();
-        //         destinations.add(otherAccount);
-        //     }
-        // }
 
         return destinations;
     }
