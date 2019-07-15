@@ -4,9 +4,7 @@ import io.token.banksample.model.AccessTokenAuthorization;
 import io.token.banksample.model.AccountLinking;
 import io.token.proto.banklink.Banklink.BankAuthorization;
 import io.token.sdk.BankAccountAuthorizer;
-import io.token.sdk.NamedAccount;
 
-import java.util.List;
 import java.util.Map;
 
 public class AccountLinkingImpl implements AccountLinking {

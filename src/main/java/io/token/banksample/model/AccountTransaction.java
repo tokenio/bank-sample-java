@@ -8,7 +8,6 @@ import static io.token.sdk.util.ProtoFactory.toTransactionStatus;
 import io.token.proto.bankapi.Bankapi.StatusCode;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.money.MoneyProtos;
-import io.token.proto.common.pricing.PricingProtos.TransferQuote;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transaction.TransactionProtos.TransactionType;
 
