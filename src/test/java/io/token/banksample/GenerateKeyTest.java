@@ -14,9 +14,11 @@ public class GenerateKeyTest {
         Crypto crypto = CryptoRegistry.getInstance().cryptoFor(CryptoType.EDDSA);
         KeyPair keyPair = crypto.generateKeyPair();
         System.out.println("crypto: " + crypto.getAlgorithm().toUpperCase());
-        System.out.println("private-key (Used for signing bank auth payloads):"
-                + crypto.serialize(keyPair.getPrivate()));
-        System.out.println("public-key (Give to Token so that Token can verify bank auth payloads):"
-                + crypto.serialize(keyPair.getPublic()));
+        System.out.println("private-key: "
+                + crypto.serialize(keyPair.getPrivate())
+                + " // Used for signing bank auth payloads");
+        System.out.println("public-key: "
+                + crypto.serialize(keyPair.getPublic())
+                + "  // Give to Token so that Token can verify bank auth payloads");
     }
 }
