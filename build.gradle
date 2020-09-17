@@ -32,7 +32,7 @@ project.mainClassName = project.group + '.Application'
 
 ext {
     ver = [
-        tokenIntegrationSdk: '2.1.30',
+        tokenIntegrationSdk: '2.4.3',
     ]
 }
 
