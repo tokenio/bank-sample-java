@@ -7,6 +7,11 @@ import io.token.banksample.config.AccountConfig;
 import io.token.banksample.model.AccountTransaction;
 import io.token.banksample.model.Accounting;
 import io.token.proto.PagedList;
+import io.token.proto.bankapi.Bankapi.GetAccountResponse;
+import io.token.proto.bankapi.Bankapi.GetAccountResponse.Account;
+import io.token.proto.common.account.AccountProtos.AccountDetails;
+import io.token.proto.common.account.AccountProtos.AccountDetails.AccountType;
+import io.token.proto.common.account.AccountProtos.AccountFeatures;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
@@ -27,6 +32,33 @@ public class AccountServiceImpl implements AccountService {
 
     public AccountServiceImpl(Accounting accounts) {
         this.accounts = accounts;
+    }
+
+    @Override
+    public Account getAccount(BankAccount bankAccount) {
+        AccountConfig account = accounts
+                .lookupAccount(bankAccount)
+                .orElseThrow(() -> new BankException(
+                        FAILURE_ACCOUNT_NOT_FOUND,
+                        "Account not found"));
+
+        AccountDetails details = AccountDetails.newBuilder()
+                .setStatus("ACTIVE") // Any string status, E.g., "Active/Inactive/Frozen/Dormant"
+                .setType(AccountType.CHECKING)
+                .setIdentifier("bank account identifier")
+                .build();
+
+        AccountFeatures features = AccountFeatures.newBuilder()
+                .setSupportsInformation(true)
+                .setSupportsReceivePayment(true)
+                .setSupportsSendPayment(true)
+                .build();
+
+        return GetAccountResponse.Account.newBuilder()
+                .setAccountFeatures(features)
+                .setAccountDetails(details)
+                .setName(account.getName())
+                .build();
     }
 
     @Override
