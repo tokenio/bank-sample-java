@@ -1,6 +1,7 @@
 package io.token.banksample.services;
 
 import static io.token.proto.bankapi.Bankapi.StatusCode.FAILURE_ACCOUNT_NOT_FOUND;
+import static io.token.proto.common.account.AccountProtos.AccountIdentifier.Iban;
 import static java.util.stream.Collectors.toList;
 
 import io.token.banksample.config.AccountConfig;
@@ -12,6 +13,7 @@ import io.token.proto.bankapi.Bankapi.GetAccountResponse.Account;
 import io.token.proto.common.account.AccountProtos.AccountDetails;
 import io.token.proto.common.account.AccountProtos.AccountDetails.AccountType;
 import io.token.proto.common.account.AccountProtos.AccountFeatures;
+import io.token.proto.common.account.AccountProtos.AccountIdentifier;
 import io.token.proto.common.account.AccountProtos.BankAccount;
 import io.token.proto.common.transaction.TransactionProtos.Transaction;
 import io.token.proto.common.transferinstructions.TransferInstructionsProtos.CustomerData;
@@ -46,6 +48,13 @@ public class AccountServiceImpl implements AccountService {
                 .setStatus("ACTIVE") // Any string status, E.g., "Active/Inactive/Frozen/Dormant"
                 .setType(AccountType.CHECKING)
                 .setIdentifier("bank account identifier")
+                // This sample only adds Iban as an account identifier, but if an account has
+                // another identifier (e.g. GbDomestic) it might be added as well.
+                .addAccountIdentifiers(AccountIdentifier.newBuilder()
+                        .setIban(Iban.newBuilder()
+                                .setIban(bankAccount.getSepa().getIban())))
+                .setBic(account.getBic())
+                .setAccountHolderName(account.getName())
                 .build();
 
         AccountFeatures features = AccountFeatures.newBuilder()
