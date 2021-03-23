@@ -37,7 +37,7 @@ ext {
 }
 
 dependencies {
-    compileOnly "com.google.auto.value:auto-value:1.5"
+    compileOnly "com.google.auto.value:auto-value:1.7.5"
     apt "com.google.auto.value:auto-value:1.5"
 
     compile group: 'io.token.sdk', name: 'tokenio-sdk-integration', version: ver.tokenIntegrationSdk
