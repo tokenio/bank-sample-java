@@ -25,7 +25,6 @@ public class GenerateKeyTest {
                 + "  // Give to Token so that Token can verify bank auth payloads");
 
         System.out.println("Key-ID for public key: " +keyIdFor(crypto.serialize(keyPair.getPublic())));
-        System.out.println("Key-ID for a given public key: " +keyIdFor("wsBhl2QxdB-Nate9cHtGp93D0U0Y1gMYuycWfozIpnY")); // Generating KeyID For a given input
     }
 
 
