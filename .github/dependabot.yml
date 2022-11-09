@@ -1,0 +1,22 @@
+version: 2
+updates:
+- package-ecosystem: gradle
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: com.google.auto.value:auto-value
+    versions:
+    - 1.7.4
+    - 1.7.5
+    - "1.8"
+  - dependency-name: junit:junit
+    versions:
+    - 4.13.1
+  - dependency-name: com.github.johnrengelman.shadow
+    versions:
+    - 6.1.0
+  - dependency-name: org.apache.commons:commons-lang3
+    versions:
+    - "3.11"
