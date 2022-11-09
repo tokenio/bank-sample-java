@@ -43,7 +43,7 @@ dependencies {
     compile group: 'io.token.sdk', name: 'tokenio-sdk-integration', version: ver.tokenIntegrationSdk
     compile group: 'com.beust', name: 'jcommander', version: '1.72'
 
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.13.2'
     testCompile 'org.apache.commons:commons-lang3:3.4'
     testCompile 'org.assertj:assertj-core:3.8.0'
 }
